@@ -1,0 +1,1 @@
+Be sure to make all changes to /src/public/graph.js compactible with /src/public/index.html

@@ -7,9 +7,9 @@ export function repelAndAttract(canvas, particles, NUM_PARTICLES) {
 		var netForceY = 0
 		for (const [_, nearParticle] of particles) {
 			// Repulsive Force
-			netForceX = netForceX + ((Math.abs(particle.x - nearParticle.x) < NUM_PARTICLES * 1.5 ? (particle.x - nearParticle.x) : 0) * GRAVITY)
-			netForceY = netForceY + ((Math.abs(particle.y - nearParticle.y) < NUM_PARTICLES * 1.5 ? (particle.y - nearParticle.y) : 0) * GRAVITY)
-
+			// netForceX = netForceX + ((Math.abs(particle.x - nearParticle.x) < NUM_PARTICLES * 1.5 ? (particle.x - nearParticle.x) : 0) * GRAVITY)
+			// netForceY = netForceY + ((Math.abs(particle.y - nearParticle.y) < NUM_PARTICLES * 1.5 ? (particle.y - nearParticle.y) : 0) * GRAVITY)
+			//
 			// Attractive Force
 			netForceX = netForceX - ((Math.abs(particle.x - nearParticle.x) > NUM_PARTICLES * 100 ? (particle.x - nearParticle.x) : 0) * GRAVITY)
 			netForceY = netForceY - ((Math.abs(particle.y - nearParticle.y) > NUM_PARTICLES * 100 ? (particle.y - nearParticle.y) : 0) * GRAVITY)

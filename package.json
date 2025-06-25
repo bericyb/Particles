@@ -1,0 +1,35 @@
+{
+  "name": "particles",
+  "version": "1.0.0",
+  "description": "## Overview",
+  "main": "dist/server/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run http",
+    "dev": "npm run http:dev",
+    "build": "tsc",
+    "serve": "npm run build && npm start",
+    "http": "npm run build && node dist/server/http-server.js",
+    "http:dev": "nodemon --exec ts-node src/server/http-server.ts",
+    "mcp": "npm run build && node dist/server/mcp-server.js",
+    "mcp:dev": "ts-node src/server/mcp-server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.3",
+    "@types/uuid": "^10.0.0",
+    "axios": "^1.10.0",
+    "express": "^5.1.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.65"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.3",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,1 @@
+Whenever possible, try to simplify the code base. If you find that things are getting complex, try to abstract it into a separate package, or simplify as the user if this feature is even necessary.

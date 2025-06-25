@@ -1,0 +1,1 @@
+Whenever possible, avoid using the browser. Instead make automated tests that confirm the expected behavior.

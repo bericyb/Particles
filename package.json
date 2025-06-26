@@ -20,9 +20,11 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.3",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "axios": "^1.10.0",
     "express": "^5.1.0",
     "uuid": "^11.1.0",
+    "ws": "^8.18.2",
     "zod": "^3.25.65"
   },
   "devDependencies": {

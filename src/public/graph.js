@@ -43,13 +43,13 @@ fetch('http://localhost:3001/data')
 	.then(data => {
 		console.log('Fetched graph data:', data);
 		
-		// Always expect new graph format
-		if (data && data.nodes) {
+		// Expect GraphData format: {nodes: {}, edges: {}}
+		if (data && data.nodes && data.edges) {
 			particles = data;
 			console.log('Using backend graph data:', particles);
 		} else {
 			particles = { nodes: {}, edges: {} };
-			console.log('No data found, using empty graph');
+			console.log('No valid graph data found, using empty graph');
 		}
 	})
 	.catch(error => {
@@ -564,6 +564,69 @@ document.getElementById('edgeSearch').addEventListener('input', (e) => {
 	renderAvailableParticles(e.target.value);
 });
 
+// New edge management functions
+async function createEdge(source, target, options = {}) {
+	try {
+		const response = await fetch('http://localhost:3001/edge', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				source,
+				target,
+				label: options.label || '',
+				directed: options.directed !== undefined ? options.directed : true,
+				weight: options.weight,
+				metadata: options.metadata
+			})
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		return result.edgeId;
+	} catch (error) {
+		console.error('Failed to create edge:', error);
+		throw error;
+	}
+}
+
+async function deleteEdge(edgeId) {
+	try {
+		const response = await fetch(`http://localhost:3001/edge/${edgeId}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Failed to delete edge:', error);
+		throw error;
+	}
+}
+
+async function getNodeEdges(nodeKey) {
+	try {
+		const response = await fetch(`http://localhost:3001/node/${nodeKey}/edges`);
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	} catch (error) {
+		console.error('Failed to get node edges:', error);
+		throw error;
+	}
+}
+
 // Form submission event listener
 addParticleForm.addEventListener("submit", async (e) => {
 	e.preventDefault();
@@ -571,11 +634,11 @@ addParticleForm.addEventListener("submit", async (e) => {
 	const formData = new FormData(addParticleForm);
 	
 	// Collect edges from checked items
-	const edges = [];
+	const selectedEdges = [];
 	document.querySelectorAll('input[name^="edge-"]:checked').forEach(checkbox => {
 		const particleKey = checkbox.name.replace('edge-', '');
 		const labelInput = document.querySelector(`input[name="label-${particleKey}"]`);
-		edges.push({
+		selectedEdges.push({
 			key: particleKey,
 			label: labelInput.value.trim() || ""
 		});
@@ -593,13 +656,13 @@ addParticleForm.addEventListener("submit", async (e) => {
 		}
 	}
 	
-	const particleData = {
+	// Create node data (without edges)
+	const nodeData = {
 		x: parseFloat(formData.get('x')),
 		y: parseFloat(formData.get('y')),
 		title: formData.get('title'),
 		radius: parseFloat(formData.get('radius')),
-		data: parsedData,
-		edges: edges
+		data: parsedData
 	};
 	
 	const isUpdate = addParticlesModal.dataset.mode === "update";
@@ -614,43 +677,73 @@ addParticleForm.addEventListener("submit", async (e) => {
 	}
 	
 	try {
-		// Add/update particle on server
-		const response = await fetch(`http://localhost:3001/particle/${key}`, {
+		// Step 1: Add/update the node
+		const nodeResponse = await fetch(`http://localhost:3001/particle/${key}`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify(particleData)
+			body: JSON.stringify(nodeData)
 		});
 		
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+		if (!nodeResponse.ok) {
+			throw new Error(`HTTP error! status: ${nodeResponse.status}`);
 		}
 		
-		// Refetch all particles
+		// Step 2: Handle edge management for updates
+		if (isUpdate) {
+			// Get current edges for this node
+			const currentEdges = await getNodeEdges(key);
+			
+			// Delete edges that are no longer selected
+			for (const edge of currentEdges) {
+				const isStillSelected = selectedEdges.some(selected => 
+					(edge.source === key && edge.target === selected.key) ||
+					(edge.target === key && edge.source === selected.key)
+				);
+				
+				if (!isStillSelected) {
+					await deleteEdge(edge.id);
+				}
+			}
+		}
+		
+		// Step 3: Create new edges
+		for (const selectedEdge of selectedEdges) {
+			try {
+				await createEdge(key, selectedEdge.key, {
+					label: selectedEdge.label,
+					directed: true
+				});
+			} catch (edgeError) {
+				console.warn(`Failed to create edge from ${key} to ${selectedEdge.key}:`, edgeError);
+			}
+		}
+		
+		// Step 4: Refetch all data to update local state
 		const dataResponse = await fetch('http://localhost:3001/data');
 		if (!dataResponse.ok) {
 			throw new Error(`HTTP error! status: ${dataResponse.status}`);
 		}
 		
 		const data = await dataResponse.json();
-		// Always use new graph format
-		if (data && data.nodes) {
-			particles = data; // Store full graph structure
+		if (data && data.nodes && data.edges) {
+			particles = data;
 		} else {
-			particles = { nodes: {}, edges: {} }; // Empty graph
+			particles = { nodes: {}, edges: {} };
 		}
 		
 		// Close modal and reset form
 		addParticlesModal.classList.add("hidden");
 		addParticleForm.reset();
-		
 		resetFormMode();
 		
 		console.log(`Particle ${isUpdate ? 'updated' : 'added'} successfully`);
+		showNotification(`Node ${isUpdate ? 'updated' : 'created'} successfully!`, 3000);
+		
 	} catch (error) {
 		console.error(`Error ${isUpdate ? 'updating' : 'adding'} particle:`, error);
-		alert(`Failed to ${isUpdate ? 'update' : 'add'} particle. Please try again.`);
+		showNotification(`Failed to ${isUpdate ? 'update' : 'add'} particle. Please try again.`, 4000);
 	}
 });
 
@@ -659,21 +752,8 @@ function handleClick(event) {
 	const x = (event.clientX - bounding.left - offsetX) / scale;
 	const y = (event.clientY - bounding.top - offsetY) / scale;
 
-	// Get nodes based on data format
-	let nodes;
-	if (particles && particles.nodes) {
-		// New graph format
-		nodes = particles.nodes;
-	} else if (particles instanceof Map) {
-		// Legacy Map format
-		nodes = Object.fromEntries(particles);
-	} else {
-		// Legacy object format
-		nodes = particles;
-	}
-
 	// Check if user clicked on a node
-	for (const [key, particle] of Object.entries(nodes)) {
+	for (const [key, particle] of Object.entries(particles.nodes)) {
 		if (particle.x + particle.radius >= x && particle.x - particle.radius <= x && particle.y + particle.radius >= y && particle.y - particle.radius <= y) {
 			console.log("Click!")
 			
@@ -753,18 +833,8 @@ async function editParticle(key) {
 		// Close the particle info modal
 		particleModal.classList.add("hidden");
 		
-		// Get the current particle data based on data format
-		let particle;
-		if (particles && particles.nodes) {
-			// New graph format
-			particle = particles.nodes[key];
-		} else if (particles instanceof Map) {
-			// Legacy Map format
-			particle = particles.get(key);
-		} else {
-			// Legacy object format
-			particle = particles[key];
-		}
+		// Get the current particle data
+		const particle = particles.nodes[key];
 		
 		if (!particle) {
 			console.error(`Particle with key ${key} not found`);
@@ -799,15 +869,19 @@ async function editParticle(key) {
 		// Load available particles for edges
 		await loadAvailableParticles();
 		
-		// Check the appropriate edge checkboxes and populate labels
-		if (particle.edges && particle.edges.length > 0) {
+		// Get current edges for this node and populate checkboxes
+		try {
+			const currentEdges = await getNodeEdges(key);
+			
 			// Wait a bit for the edge items to be rendered
 			setTimeout(() => {
-				particle.edges.forEach(edge => {
-					const checkbox = document.getElementById(`edge-${edge.key}`);
+				currentEdges.forEach(edge => {
+					// Determine the target node (the other end of the edge)
+					const targetKey = edge.source === key ? edge.target : edge.source;
+					const checkbox = document.getElementById(`edge-${targetKey}`);
 					if (checkbox) {
 						checkbox.checked = true;
-						const labelInput = document.querySelector(`input[name="label-${edge.key}"]`);
+						const labelInput = document.querySelector(`input[name="label-${targetKey}"]`);
 						if (labelInput) {
 							labelInput.disabled = false;
 							labelInput.value = edge.label || "";
@@ -815,6 +889,8 @@ async function editParticle(key) {
 					}
 				});
 			}, 100);
+		} catch (error) {
+			console.warn('Failed to load current edges for editing:', error);
 		}
 		
 		// Show the modal
@@ -827,18 +903,8 @@ async function editParticle(key) {
 // Function to handle deleting a particle
 async function deleteParticle(key) {
 	try {
-		// Get the particle data for confirmation message based on data format
-		let particle;
-		if (particles && particles.nodes) {
-			// New graph format
-			particle = particles.nodes[key];
-		} else if (particles instanceof Map) {
-			// Legacy Map format
-			particle = particles.get(key);
-		} else {
-			// Legacy object format
-			particle = particles[key];
-		}
+		// Get the particle data for confirmation message
+		const particle = particles.nodes[key];
 		
 		if (!particle) {
 			console.error(`Particle with key ${key} not found`);
@@ -977,21 +1043,8 @@ canvas.addEventListener('mousedown', (e) => {
 	const x = (e.clientX - bounding.left - offsetX) / scale;
 	const y = (e.clientY - bounding.top - offsetY) / scale;
 
-	// Get nodes based on data format
-	let nodes;
-	if (particles && particles.nodes) {
-		// New graph format
-		nodes = particles.nodes;
-	} else if (particles instanceof Map) {
-		// Legacy Map format
-		nodes = Object.fromEntries(particles);
-	} else {
-		// Legacy object format
-		nodes = particles;
-	}
-
 	// Check if user clicked on a node
-	for (let [key, particle] of Object.entries(nodes)) {
+	for (let [key, particle] of Object.entries(particles.nodes)) {
 		if (particle.x + particle.radius >= x && particle.x - particle.radius <= x && particle.y + particle.radius >= y && particle.y - particle.radius <= y) {
 			draggingObject = particle
 			draggingOffset.x = x - particle.x

@@ -1,0 +1,40 @@
+html, body {
+	margin: 10;
+	overflow: hidden;
+	height: 100%;
+	background-color: #000000;
+} 
+
+canvas {
+	display: block;
+	width: 100vw;
+	height: 100vh;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  position: relative;
+}
+
+.hidden {
+  display: none;
+}
+
+#addNodeBtn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
+}

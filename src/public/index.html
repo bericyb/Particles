@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Canvas Fullscreen</title>
+	<link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+	<div class="button-container">
+		<button id="addParticleBtn">Add Particles</button>
+		<button id="sortParticlesBtn">Sort Particles</button>
+		<button id="shuffleParticlesBtn">Shuffle Particles</button>
+		<button id="clearParticleBtn">Clear Particles</button>
+		<button id="saveMapBtn">Save Map</button>
+		<button id="openMapBtn">Open Map</button>
+		<button id="toggleNodeLabelsBtn">Node Labels</button>
+		<button id="toggleEdgeLabelsBtn">Edge Labels</button>
+		<a href="/tree"><button id="treeBtn">Tree</button></a>
+	</div>
+	<canvas id="canvas"></canvas>
+	<script type="module" src="graph.js"></script>
+	<div id="particleModal" class="modal hidden">
+		<div id="particleModalBody" class="modal-content">
+		</div>
+	</div>
+
+	<div id="addParticlesModal" class="modal hidden">
+		<div class="modal-content">
+			<h2>Add New Particle</h2>
+			<form id="addParticleForm">
+				<div class="form-group">
+					<label for="particleTitle">Title:</label>
+					<input type="text" id="particleTitle" name="title" required>
+				</div>
+				
+				<!-- Advanced Settings Toggle -->
+				<div class="advanced-toggle">
+					<button type="button" id="advancedToggle" class="toggle-btn">
+						<span class="toggle-icon">▶</span>
+						<span class="toggle-text">Advanced Settings</span>
+					</button>
+				</div>
+				
+				<!-- Collapsible Advanced Settings -->
+				<div id="advancedSettings" class="advanced-settings collapsed">
+					<div class="form-group">
+						<label for="particleX">X Position:</label>
+						<input type="number" id="particleX" name="x" value="100" required>
+					</div>
+					<div class="form-group">
+						<label for="particleY">Y Position:</label>
+						<input type="number" id="particleY" name="y" value="100" required>
+					</div>
+					<div class="form-group">
+						<label for="particleRadius">Radius:</label>
+						<input type="number" id="particleRadius" name="radius" value="20" min="5" max="50" required>
+					</div>
+					<div class="form-group">
+						<label for="particleData">Data (JSON):</label>
+						<textarea id="particleData" name="data" placeholder='{"key": "value", "number": 42}' rows="4"></textarea>
+						<small class="form-help">Optional JSON data to attach to this node. Leave empty if no data is needed.</small>
+					</div>
+				</div>
+				<div class="form-group edges-section">
+					<label>Connections/Edges:</label>
+					<div class="edges-search">
+						<input type="text" id="edgeSearch" placeholder="Search particles by key or title..." autocomplete="off">
+					</div>
+					<div class="edges-container" id="edgesContainer">
+						<div class="edges-empty" id="edgesEmpty">No existing particles available for connections</div>
+					</div>
+				</div>
+				<div class="form-buttons">
+					<button type="submit">Add Particle</button>
+					<button type="button" id="cancelAddParticle">Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="notification" class="notification hidden">
+		<span id="notificationMessage"></span>
+	</div>
+
+</body>
+
+</html>

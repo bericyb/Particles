@@ -48,14 +48,8 @@ export function drawParticles(ctx, particles, showNodeLabels = true, showEdgeLab
 	// Set default text alignment
 	ctx.textAlign = "center"
 
-	// Check if we're dealing with new graph format or legacy format
-	if (particles && particles.nodes && particles.edges) {
-		// New graph format
-		drawGraph(ctx, particles, showNodeLabels, showEdgeLabels);
-	} else {
-		// Legacy format - maintain backward compatibility
-		drawLegacyParticles(ctx, particles, showNodeLabels, showEdgeLabels);
-	}
+	// Draw using GraphData format: {nodes: {}, edges: {}}
+	drawGraph(ctx, particles, showNodeLabels, showEdgeLabels);
 }
 
 function drawGraph(ctx, graphData, showNodeLabels = true, showEdgeLabels = true) {
@@ -123,76 +117,6 @@ function drawGraph(ctx, graphData, showNodeLabels = true, showEdgeLabels = true)
 	}
 }
 
-function drawLegacyParticles(ctx, particles, showNodeLabels = true, showEdgeLabels = true) {
-	// Calculate maximum edge count for better color distribution
-	let maxEdges = 1;
-	for (const [key, particle] of particles) {
-		const edgeCount = particle.edges ? particle.edges.length : 0;
-		maxEdges = Math.max(maxEdges, edgeCount);
-	}
-
-	// Track rendered edges to prevent duplicates
-	const renderedEdges = new Set();
-
-	// Draw edges first (so they appear behind nodes)
-	for (const [key, particle] of particles) {
-		if (particle.edges) {
-			for (const edge of particle.edges) {
-				if (particles.has(edge.key)) {
-					// Create a consistent edge identifier to prevent duplicates
-					// Sort the keys to ensure A->B and B->A are treated as the same edge
-					const edgeId = [key, edge.key].sort().join('-');
-					
-					// Skip if we've already rendered this edge
-					if (renderedEdges.has(edgeId)) {
-						continue;
-					}
-					
-					// Mark this edge as rendered
-					renderedEdges.add(edgeId);
-
-					const edgeX = particles.get(edge.key).x
-					const edgeY = particles.get(edge.key).y
-					ctx.beginPath();
-					ctx.strokeStyle = "gray"
-					ctx.moveTo(particle.x, particle.y)
-					ctx.lineTo(edgeX, edgeY)
-					ctx.stroke();
-
-					// Draw label halfway along the edge (only if label exists and edge labels are enabled)
-					if (showEdgeLabels && edge.label && edge.label.trim()) {
-						const halfwayX = particle.x + (edgeX - particle.x) / 2
-						const halfwayY = particle.y + (edgeY - particle.y) / 2
-						ctx.fillStyle = "white";
-						ctx.fillText(edge.label, halfwayX, halfwayY - particle.radius)
-					}
-				}
-			}
-		}
-	}
-
-	// Draw nodes (after edges so they appear on top)
-	for (const [key, particle] of particles) {
-		// Calculate dynamic color based on edge count
-		const edgeCount = particle.edges ? particle.edges.length : 0;
-		const dynamicColor = calculateNodeColor(edgeCount, maxEdges);
-		
-		ctx.beginPath()
-		ctx.arc(particle.x, particle.y, particle.radius, 0, FULL_CIRCLE, 1)
-		ctx.fillStyle = dynamicColor
-		ctx.fill()
-		
-		// Draw node label if node labels are enabled
-		if (showNodeLabels) {
-			// Set font size based on particle radius
-			setScaledFont(ctx, particle.radius);
-			ctx.fillStyle = "white";
-			// Use particle title if available, fallback to key
-			const displayLabel = particle.title || key;
-			ctx.fillText(displayLabel, particle.x, particle.y - particle.radius * 1.4);
-		}
-	}
-}
 
 function drawArrow(ctx, sourceNode, targetNode) {
 	const angle = Math.atan2(targetNode.y - sourceNode.y, targetNode.x - sourceNode.x);

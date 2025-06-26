@@ -48,7 +48,7 @@ export const addParticle = (req: Request, res: Response) => {
     const { key } = req.params;
     const requestBody = req.body;
     
-    // Extract node data (without edges)
+    // Extract node data
     const node: Node = {
       x: requestBody.x,
       y: requestBody.y,
@@ -58,24 +58,10 @@ export const addParticle = (req: Request, res: Response) => {
       data: requestBody.data
     };
     
-    // Add the node first
+    // Add the node
     const result = graphService.addNode(key, node);
     
     if (result.success) {
-      // Handle edges if they exist in the legacy format
-      if (requestBody.edges && Array.isArray(requestBody.edges)) {
-        for (const edge of requestBody.edges) {
-          try {
-            graphService.addEdge(key, edge.key, {
-              label: edge.label || '',
-              directed: true
-            });
-          } catch (edgeError) {
-            console.warn(`Failed to add edge from ${key} to ${edge.key}:`, edgeError);
-          }
-        }
-      }
-      
       res.json(result);
     } else {
       res.status(400).json(result);

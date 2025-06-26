@@ -20,8 +20,12 @@ The project provides a simple yet powerful way to:
 - **Information Display**: Modal popup with detailed information when clicking on particles
 - **Physics Simulation**: Attractive forces between particles for automatic layout organization
 - **Particle Sorting**: Centrality-based sorting algorithm that arranges nodes by connection count
-- **Add Node Functionality**: Extend the visualization with new data points
+- **Particle Shuffling**: Random redistribution of particles for exploring different layouts
+- **Add Node Functionality**: Advanced particle creation with JSON data support and edge connections
+- **Clear Particles**: Remove all particles from the visualization
 - **Save/Load Maps**: Save particle maps to local JSON files and load them back
+- **Label Toggles**: Show/hide node labels and edge labels independently
+- **Tree View**: Alternative hierarchical view of the data structure
 - **Local Backend Server**: Store and retrieve particle data through a simple API
 - **MCP Integration**: Model Context Protocol support for AI tool integration
 - **Dual Interface**: Both HTTP REST API and MCP protocol support
@@ -48,16 +52,24 @@ npm install
 
 ### Starting the Application
 
-Run the start script to launch both the backend server and frontend:
+Run the start script to launch the HTTP server:
 
 ```bash
-./start.sh
+npm run start
 ```
 
 This will:
-- Start the backend server on port 3001
-- Launch a static file server to serve the frontend
-- Open the application in your default web browser
+- Start the HTTP server on port 3001
+- Serve the frontend static files from `src/public/`
+- Make the application available at `http://localhost:3001`
+
+For development with auto-reload:
+
+```bash
+npm run dev
+```
+
+To access the application, open your web browser and navigate to `http://localhost:3001`.
 
 ### Interacting with the Visualization
 
@@ -65,10 +77,15 @@ This will:
 - **Zoom**: Use the mouse wheel to zoom in and out
 - **Select Node**: Double-click on a particle to view its details in a modal
 - **Move Node**: Click and drag a particle to reposition it
-- **Add Node**: Click the "Add Particles" button to add a new particle
+- **Add Particles**: Click the "Add Particles" button to open an advanced form for creating new particles with JSON data and edge connections
 - **Sort Particles**: Click the "Sort Particles" button to arrange nodes by connection count (centrality-based sorting)
+- **Shuffle Particles**: Click the "Shuffle Particles" button to randomly redistribute particles across the canvas
+- **Clear Particles**: Click the "Clear Particles" button to remove all particles from the visualization
 - **Save Map**: Click the "Save Map" button to save the current particle map as a JSON file
 - **Open Map**: Click the "Open Map" button to load a previously saved particle map JSON file
+- **Node Labels**: Click the "Node Labels" button to toggle the visibility of particle titles
+- **Edge Labels**: Click the "Edge Labels" button to toggle the visibility of connection labels
+- **Tree View**: Click the "Tree" button to switch to an alternative hierarchical view of the data
 
 ### Particle Sorting Algorithm
 
@@ -96,14 +113,31 @@ The application includes a TypeScript-based backend server with comprehensive HT
 
 #### HTTP Endpoints
 
-- `GET /data`: Retrieve all stored particle data
-- `POST /data`: Update all stored particle data
-- `DELETE /data`: Clear all particle data
-- `GET /particle/:key`: Get a specific particle by key
-- `POST /particle/:key`: Add or update a specific particle
-- `DELETE /particle/:key`: Delete a specific particle
-- `GET /example`: Get example particle data
-- `GET /stats`: Get particle statistics (count, etc.)
+**Core Data Operations:**
+- `GET /data`: Retrieve all stored graph data
+- `POST /data`: Update all stored graph data
+- `DELETE /data`: Clear all graph data
+- `GET /example`: Get example graph data
+- `GET /stats`: Get basic statistics (node count)
+
+**Node Operations:**
+- `GET /particle/:key`: Get a specific node by key
+- `POST /particle/:key`: Add or update a specific node
+- `DELETE /particle/:key`: Delete a specific node
+
+**Graph Operations:**
+- `GET /graph`: Get complete graph data with nodes and edges
+- `POST /graph`: Update complete graph data
+- `GET /graph/stats`: Get detailed graph statistics
+
+**Edge Operations:**
+- `POST /edge`: Add a new edge between two nodes
+- `DELETE /edge/:edgeId`: Remove an edge by its ID
+- `GET /node/:key/edges`: Get all edges connected to a specific node
+- `GET /edges/:nodeA/:nodeB`: Get edges between two specific nodes
+
+**Debug:**
+- `GET /debug`: Debug endpoint for testing GraphService directly
 
 Example API usage:
 
@@ -128,7 +162,7 @@ fetch('http://localhost:3001/particle/node1', {
 // Get statistics
 fetch('http://localhost:3001/stats')
   .then(res => res.json())
-  .then(stats => console.log(`Particle count: ${stats.particleCount}`));
+  .then(stats => console.log(`Node count: ${stats.nodeCount}`));
 ```
 
 ### MCP Integration
@@ -148,14 +182,28 @@ npm run mcp
 
 #### Available MCP Tools
 
-- `get-particles`: Retrieve all particle data
-- `update-particles`: Update all particle data
-- `add-particle`: Add or update a single particle
-- `get-particle`: Get specific particle by key
-- `delete-particle`: Delete specific particle
-- `get-example`: Get example particle data
-- `clear-particles`: Clear all particle data
-- `get-stats`: Get particle statistics
+**Core Data Tools:**
+- `get-data`: Retrieve all stored graph data
+- `update-data`: Update all graph data with new dataset
+- `clear-data`: Clear all graph data
+- `get-example`: Get example graph data for testing
+- `get-stats`: Get graph statistics including node count
+
+**Node Tools:**
+- `add-node`: Add or update a single node
+- `get-node`: Get a specific node by key
+- `delete-node`: Delete a specific node by key
+
+**Graph Tools:**
+- `get-graph`: Retrieve complete graph data with nodes and edges
+- `update-graph`: Update complete graph data with new nodes and edges
+- `get-graph-stats`: Get detailed graph statistics including node and edge counts
+
+**Edge Tools:**
+- `add-edge`: Add a new edge between two nodes
+- `remove-edge`: Remove an edge by its ID
+- `get-node-edges`: Get all edges connected to a specific node
+- `get-edges-between`: Get edges between two specific nodes
 
 #### MCP Configuration
 
@@ -183,42 +231,52 @@ Both HTTP and MCP interfaces share the same data store, ensuring consistency acr
 │   ├── public/                    # Frontend files
 │   │   ├── index.html            # Main HTML file
 │   │   ├── index.css             # CSS styles
-│   │   ├── index.js              # Main JavaScript file for the frontend
+│   │   ├── graph.js              # Main JavaScript file for graph visualization
 │   │   ├── utils.js              # Utility functions for particle creation
-│   │   └── repel_attract.js      # Physics simulation for particle movement
+│   │   ├── repel_attract.js      # Physics simulation for particle movement
+│   │   ├── sort-particles.js     # Particle sorting functionality
+│   │   ├── shuffle-particles.js  # Particle shuffling functionality
+│   │   ├── tree.html             # Tree view interface
+│   │   └── tree.js               # Tree view functionality
 │   └── server/                   # Backend TypeScript files
-│       ├── server.ts             # Main HTTP server entry point
+│       ├── http-server.ts        # HTTP server entry point
 │       ├── mcp-server.ts         # Standalone MCP server entry point
+│       ├── server.ts             # Shared server utilities
 │       ├── types.ts              # Shared TypeScript type definitions
 │       ├── services/
-│       │   └── particleService.ts # Shared business logic layer
+│       │   └── graphService.ts   # Shared business logic layer
 │       ├── routes/
 │       │   ├── index.ts          # HTTP route definitions
 │       │   └── handlers.ts       # HTTP route handler functions
 │       └── mcp/
+│           ├── httpClient.ts     # HTTP client for MCP server
 │           ├── mcpServer.ts      # MCP server configuration
 │           └── tools.ts          # MCP tool definitions
+├── tests/                        # Test files
 ├── dist/                         # Compiled TypeScript output
 ├── package.json                  # Node.js dependencies and scripts
 ├── tsconfig.json                 # TypeScript configuration
-├── MCP_INTEGRATION.md            # Detailed MCP integration documentation
-└── start.sh                     # Script to start frontend and backend
+└── MCP_INTEGRATION.md            # Detailed MCP integration documentation
 ```
 
 ### Key Components
 
 - **Frontend** (`src/public/`):
-  - `index.html`: Defines the canvas and UI elements
-  - `index.js`: Handles user interaction and animation
+  - `index.html`: Defines the canvas and UI elements with buttons for all functionality
+  - `graph.js`: Main JavaScript file handling graph visualization, user interaction, and animation
   - `utils.js`: Contains functions for creating and drawing particles
-  - `repel_attract.js`: Implements the physics simulation
+  - `repel_attract.js`: Implements the physics simulation for particle movement
+  - `sort-particles.js`: Centrality-based particle sorting functionality
+  - `shuffle-particles.js`: Random particle shuffling functionality
+  - `tree.html` & `tree.js`: Alternative tree view interface
 
 - **Backend** (`src/server/`):
-  - `server.ts`: Main HTTP server with Express.js
+  - `http-server.ts`: HTTP server entry point with Express.js
   - `mcp-server.ts`: Standalone MCP server entry point
-  - `services/particleService.ts`: Unified business logic for both HTTP and MCP
+  - `server.ts`: Shared server utilities
+  - `services/graphService.ts`: Unified business logic for both HTTP and MCP interfaces
   - `routes/`: HTTP route definitions and handlers
-  - `mcp/`: MCP server configuration and tool definitions
+  - `mcp/`: MCP server configuration, tools, and HTTP client
   - `types.ts`: Shared TypeScript interfaces
 
 - **Architecture Benefits**:
@@ -252,38 +310,6 @@ Contributions to improve Particles are welcome. Please feel free to:
 
 This project is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 
-## Recent Updates
-
-### Graph Rendering and Data Handling Fixes (December 2024)
-
-We've recently implemented significant fixes to improve the reliability and functionality of the graph visualization:
-
-#### Issues Resolved:
-1. **Initial Render Problem**: Fixed issue where nodes wouldn't render on initial page load despite successful data fetching
-2. **Node Label Display**: Corrected node labels to show user-provided titles instead of UUID keys
-3. **Data Format Compatibility**: Enhanced support for multiple data formats (new graph format, legacy Map format, and legacy object format)
-
-#### Key Improvements:
-- ✅ **Robust Data Handling**: The application now seamlessly handles both new graph format (`{nodes: {...}, edges: {...}}`) and legacy particle formats
-- ✅ **Proper Label Display**: Node labels now correctly display meaningful titles instead of technical UUIDs
-- ✅ **Backward Compatibility**: All existing data continues to work without migration
-- ✅ **Comprehensive Testing**: Added automated test suite to prevent regressions
-- ✅ **Enhanced Documentation**: Detailed technical documentation for troubleshooting and development
-
-#### Technical Details:
-- **Format Detection**: Intelligent detection of data format (graph vs legacy) ensures proper rendering
-- **Label Logic**: Implemented `node.title || nodeKey` pattern for consistent label display
-- **Event Handling**: Updated all click, drag, and interaction handlers to work with multiple data formats
-- **Schema Consistency**: Aligned MCP server tools with HTTP endpoints for consistent behavior
-
-#### Testing:
-Run the comprehensive test suite to verify functionality:
-```bash
-npm install --save-dev jsdom
-node tests/test-graph-fixes.js
-```
-
-For detailed technical information about these fixes, see [GRAPH_FIXES_DOCUMENTATION.md](./GRAPH_FIXES_DOCUMENTATION.md).
 
 ## Acknowledgements
 

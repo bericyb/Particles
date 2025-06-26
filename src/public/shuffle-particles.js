@@ -23,8 +23,73 @@ export class ParticleShuffler {
     }
 
     /**
+     * Convert graph format to working format with merged edges
+     * @param {Object} graphData - Graph data with nodes and edges
+     * @returns {Object} - Nodes with merged edge information
+     */
+    prepareGraphData(graphData) {
+        // Handle different input formats
+        let nodes, edges;
+        
+        if (graphData && graphData.nodes) {
+            // Graph format: {nodes: {...}, edges: {...}}
+            nodes = { ...graphData.nodes };
+            edges = graphData.edges || {};
+        } else if (graphData instanceof Map) {
+            // Map format - convert to object
+            nodes = Object.fromEntries(graphData);
+            edges = {};
+        } else if (typeof graphData === 'object') {
+            // Object format
+            nodes = { ...graphData };
+            edges = {};
+        } else {
+            console.error('Invalid graph data format:', graphData);
+            return {};
+        }
+
+        // Merge edges into nodes
+        for (const [edgeId, edge] of Object.entries(edges)) {
+            const sourceNode = nodes[edge.source];
+            const targetNode = nodes[edge.target];
+            
+            if (sourceNode && targetNode) {
+                // Initialize edges array if it doesn't exist
+                if (!sourceNode.edges) {
+                    sourceNode.edges = [];
+                }
+                if (!targetNode.edges) {
+                    targetNode.edges = [];
+                }
+                
+                // Add edge to source node
+                const existingSourceEdge = sourceNode.edges.find(e => e.key === edge.target);
+                if (!existingSourceEdge) {
+                    sourceNode.edges.push({
+                        key: edge.target,
+                        label: edge.label || ''
+                    });
+                }
+                
+                // Add reverse edge to target node (for undirected graph behavior)
+                if (!edge.directed) {
+                    const existingTargetEdge = targetNode.edges.find(e => e.key === edge.source);
+                    if (!existingTargetEdge) {
+                        targetNode.edges.push({
+                            key: edge.source,
+                            label: edge.label || ''
+                        });
+                    }
+                }
+            }
+        }
+
+        return nodes;
+    }
+
+    /**
      * Detect connected components (clusters) in the particle graph
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {Array} - Array of clusters, each containing an array of particle keys
      */
     detectClusters(particles) {
@@ -38,10 +103,10 @@ export class ParticleShuffler {
             visited.add(nodeKey);
             currentCluster.push(nodeKey);
             
-            const particle = particles.get(nodeKey);
+            const particle = particles[nodeKey];
             if (particle && particle.edges) {
                 for (const edge of particle.edges) {
-                    if (particles.has(edge.key) && !visited.has(edge.key)) {
+                    if (particles[edge.key] && !visited.has(edge.key)) {
                         dfs(edge.key, currentCluster);
                     }
                 }
@@ -49,7 +114,7 @@ export class ParticleShuffler {
         };
         
         // Find all connected components
-        for (const [key] of particles) {
+        for (const key of Object.keys(particles)) {
             if (!visited.has(key)) {
                 const cluster = [];
                 dfs(key, cluster);
@@ -153,7 +218,7 @@ export class ParticleShuffler {
     /**
      * Calculate the effective radius for a cluster based on its size
      * @param {Array} clusterNodes - Array of node keys in the cluster
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {number} - Effective radius for the cluster
      */
     calculateClusterRadius(clusterNodes, particles) {
@@ -164,13 +229,13 @@ export class ParticleShuffler {
 
     /**
      * Calculate degree centrality for each particle
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {Map} - Map of particle keys to centrality scores
      */
     calculateCentrality(particles) {
         const centrality = new Map();
         
-        for (const [key, particle] of particles) {
+        for (const [key, particle] of Object.entries(particles)) {
             const edgeCount = particle.edges ? particle.edges.length : 0;
             centrality.set(key, edgeCount);
         }
@@ -180,7 +245,7 @@ export class ParticleShuffler {
 
     /**
      * Calculate target positions based on centrality and cluster separation
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @param {Map} centrality - Map of centrality scores
      * @returns {Map} - Map of particle keys to target positions
      */
@@ -215,11 +280,11 @@ export class ParticleShuffler {
             
             // Calculate centrality within this cluster
             const clusterCentrality = new Map();
-            const clusterParticles = new Map();
+            const clusterParticles = {};
             
             for (const nodeKey of clusterNodes) {
-                const particle = particles.get(nodeKey);
-                clusterParticles.set(nodeKey, particle);
+                const particle = particles[nodeKey];
+                clusterParticles[nodeKey] = particle;
                 clusterCentrality.set(nodeKey, centrality.get(nodeKey) || 0);
             }
             
@@ -246,7 +311,7 @@ export class ParticleShuffler {
 
     /**
      * Calculate target positions for a single cluster (original algorithm)
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @param {Map} centrality - Map of centrality scores
      * @returns {Map} - Map of particle keys to target positions
      */
@@ -256,7 +321,7 @@ export class ParticleShuffler {
         const centerY = this.canvas.height / 2;
         
         // Calculate max radius based on canvas size, accounting for particle sizes
-        const maxParticleRadius = Math.max(...Array.from(particles.values()).map(p => p.radius || 20));
+        const maxParticleRadius = Math.max(...Object.values(particles).map(p => p.radius || 20));
         const canvasBoundary = Math.min(this.canvas.width, this.canvas.height) / 2;
         this.maxRadius = Math.max(this.minRadius + 50, canvasBoundary - maxParticleRadius - 20);
         
@@ -293,7 +358,7 @@ export class ParticleShuffler {
             const angleStep = (2 * Math.PI) / particlesAtLevel.length;
             
             particlesAtLevel.forEach((key, index) => {
-                const particle = particles.get(key);
+                const particle = particles[key];
                 const angle = index * angleStep + Math.random() * 0.5; // Add slight randomness
                 let x = centerX + Math.cos(angle) * targetRadius;
                 let y = centerY + Math.sin(angle) * targetRadius;
@@ -370,11 +435,11 @@ export class ParticleShuffler {
 
     /**
      * Apply repulsion forces between particles to prevent overlap
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @param {Map} targets - Map of target positions
      */
     applyRepulsionForces(particles, targets) {
-        const keys = Array.from(particles.keys());
+        const keys = Object.keys(particles);
         const maxIterations = 5; // Reduced from 10 for faster processing
         
         for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -384,8 +449,8 @@ export class ParticleShuffler {
                 for (let j = i + 1; j < keys.length; j++) {
                     const key1 = keys[i];
                     const key2 = keys[j];
-                    const particle1 = particles.get(key1);
-                    const particle2 = particles.get(key2);
+                    const particle1 = particles[key1];
+                    const particle2 = particles[key2];
                     const target1 = targets.get(key1);
                     const target2 = targets.get(key2);
                     
@@ -444,12 +509,12 @@ export class ParticleShuffler {
 
     /**
      * Enforce canvas boundary constraints for all target positions
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @param {Map} targets - Map of target positions
      */
     enforceCanvasBounds(particles, targets) {
         for (const [key, target] of targets) {
-            const particle = particles.get(key);
+            const particle = particles[key];
             if (!particle) continue;
             
             // Ensure particle stays within canvas bounds, accounting for its radius
@@ -466,17 +531,20 @@ export class ParticleShuffler {
 
     /**
      * Start the shuffling animation
-     * @param {Map} particles - Map of particles to shuffle
+     * @param {Object} graphData - Graph data with nodes and edges
      * @param {Function} updateCallback - Callback to trigger redraw
      * @param {Function} serverUpdateCallback - Callback to update server
      */
-    async startShuffling(particles, updateCallback, serverUpdateCallback) {
+    async startShuffling(graphData, updateCallback, serverUpdateCallback) {
         // Stop any current animation and reset flags
         this.shouldStop = false;
         this.isAnimating = true;
         
         console.log('Starting particle shuffling...');
         const startTime = performance.now();
+        
+        // Prepare graph data and merge edges into nodes
+        const particles = this.prepareGraphData(graphData);
         
         // Calculate centrality and target positions
         const centrality = this.calculateCentrality(particles);
@@ -492,7 +560,7 @@ export class ParticleShuffler {
         if (animationCompleted && serverUpdateCallback) {
             // Batch server updates for better performance
             const updatePromises = [];
-            for (const [key, particle] of particles) {
+            for (const [key, particle] of Object.entries(particles)) {
                 updatePromises.push(serverUpdateCallback(key, particle));
             }
             
@@ -510,7 +578,7 @@ export class ParticleShuffler {
 
     /**
      * Animate particles to their target positions
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @param {Map} targets - Map of target positions
      * @param {Function} updateCallback - Callback to trigger redraw
      * @returns {Promise<boolean>} - Returns true if animation completed, false if interrupted
@@ -526,7 +594,7 @@ export class ParticleShuffler {
                 
                 let allReachedTarget = true;
                 
-                for (const [key, particle] of particles) {
+                for (const [key, particle] of Object.entries(particles)) {
                     const target = targets.get(key);
                     if (!target) continue;
                     

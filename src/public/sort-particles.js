@@ -14,8 +14,73 @@ export class ParticleSorter {
     }
 
     /**
+     * Convert graph format to working format with merged edges
+     * @param {Object} graphData - Graph data with nodes and edges
+     * @returns {Object} - Nodes with merged edge information
+     */
+    prepareGraphData(graphData) {
+        // Handle different input formats
+        let nodes, edges;
+        
+        if (graphData && graphData.nodes) {
+            // Graph format: {nodes: {...}, edges: {...}}
+            nodes = { ...graphData.nodes };
+            edges = graphData.edges || {};
+        } else if (graphData instanceof Map) {
+            // Map format - convert to object
+            nodes = Object.fromEntries(graphData);
+            edges = {};
+        } else if (typeof graphData === 'object') {
+            // Object format
+            nodes = { ...graphData };
+            edges = {};
+        } else {
+            console.error('Invalid graph data format:', graphData);
+            return {};
+        }
+
+        // Merge edges into nodes
+        for (const [edgeId, edge] of Object.entries(edges)) {
+            const sourceNode = nodes[edge.source];
+            const targetNode = nodes[edge.target];
+            
+            if (sourceNode && targetNode) {
+                // Initialize edges array if it doesn't exist
+                if (!sourceNode.edges) {
+                    sourceNode.edges = [];
+                }
+                if (!targetNode.edges) {
+                    targetNode.edges = [];
+                }
+                
+                // Add edge to source node
+                const existingSourceEdge = sourceNode.edges.find(e => e.key === edge.target);
+                if (!existingSourceEdge) {
+                    sourceNode.edges.push({
+                        key: edge.target,
+                        label: edge.label || ''
+                    });
+                }
+                
+                // Add reverse edge to target node (for undirected graph behavior)
+                if (!edge.directed) {
+                    const existingTargetEdge = targetNode.edges.find(e => e.key === edge.source);
+                    if (!existingTargetEdge) {
+                        targetNode.edges.push({
+                            key: edge.source,
+                            label: edge.label || ''
+                        });
+                    }
+                }
+            }
+        }
+
+        return nodes;
+    }
+
+    /**
      * Detect connected components (clusters) in the particle graph
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {Array} - Array of clusters, each containing an array of particle keys
      */
     detectClusters(particles) {
@@ -29,10 +94,10 @@ export class ParticleSorter {
             visited.add(nodeKey);
             currentCluster.push(nodeKey);
             
-            const particle = particles.get(nodeKey);
+            const particle = particles[nodeKey];
             if (particle && particle.edges) {
                 for (const edge of particle.edges) {
-                    if (particles.has(edge.key) && !visited.has(edge.key)) {
+                    if (particles[edge.key] && !visited.has(edge.key)) {
                         dfs(edge.key, currentCluster);
                     }
                 }
@@ -40,7 +105,7 @@ export class ParticleSorter {
         };
         
         // Find all connected components
-        for (const [key] of particles) {
+        for (const key of Object.keys(particles)) {
             if (!visited.has(key)) {
                 const cluster = [];
                 dfs(key, cluster);
@@ -56,13 +121,13 @@ export class ParticleSorter {
     /**
      * Calculate total connection count for a cluster
      * @param {Array} clusterNodes - Array of node keys in the cluster
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {number} - Total connection count for the cluster
      */
     calculateClusterConnectionCount(clusterNodes, particles) {
         let totalConnections = 0;
         for (const nodeKey of clusterNodes) {
-            const particle = particles.get(nodeKey);
+            const particle = particles[nodeKey];
             if (particle && particle.edges) {
                 totalConnections += particle.edges.length;
             }
@@ -73,7 +138,7 @@ export class ParticleSorter {
     /**
      * Sort clusters by their total connection count (descending)
      * @param {Array} clusters - Array of clusters
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {Array} - Sorted clusters
      */
     sortClustersByConnectionCount(clusters, particles) {
@@ -87,7 +152,7 @@ export class ParticleSorter {
     /**
      * Group nodes within a cluster by their connection count
      * @param {Array} clusterNodes - Array of node keys in the cluster
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {Array} - Array of connection levels, each containing nodes with same connection count
      */
     groupNodesByConnectionCount(clusterNodes, particles) {
@@ -95,7 +160,7 @@ export class ParticleSorter {
         const connectionGroups = new Map();
         
         for (const nodeKey of clusterNodes) {
-            const particle = particles.get(nodeKey);
+            const particle = particles[nodeKey];
             const connectionCount = particle && particle.edges ? particle.edges.length : 0;
             
             if (!connectionGroups.has(connectionCount)) {
@@ -111,7 +176,7 @@ export class ParticleSorter {
 
     /**
      * Calculate grid positions for all particles
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @returns {Map} - Map of particle keys to target positions
      */
     calculateGridPositions(particles) {
@@ -147,7 +212,7 @@ export class ParticleSorter {
                     const y = currentY + (i * this.diagonalOffset); // Add diagonal offset for staircase effect
                     
                     // Only clamp Y position to stay within canvas bounds, allow X to extend beyond
-                    const particle = particles.get(nodeKey);
+                    const particle = particles[nodeKey];
                     const radius = particle ? particle.radius : 20;
                     const clampedY = Math.max(radius, Math.min(this.canvas.height - radius, y));
                     
@@ -167,7 +232,7 @@ export class ParticleSorter {
 
     /**
      * Animate particles to their target positions
-     * @param {Map} particles - Map of particles
+     * @param {Object} particles - Object of particles
      * @param {Map} targets - Map of target positions
      * @param {Function} updateCallback - Callback to trigger redraw
      */
@@ -176,7 +241,7 @@ export class ParticleSorter {
             const animate = () => {
                 let allReachedTarget = true;
                 
-                for (const [key, particle] of particles) {
+                for (const [key, particle] of Object.entries(particles)) {
                     const target = targets.get(key);
                     if (!target) continue;
                     
@@ -217,11 +282,11 @@ export class ParticleSorter {
 
     /**
      * Start the sorting process
-     * @param {Map} particles - Map of particles to sort
+     * @param {Object} graphData - Graph data with nodes and edges
      * @param {Function} updateCallback - Callback to trigger redraw
      * @param {Function} serverUpdateCallback - Callback to update server
      */
-    async startSorting(particles, updateCallback, serverUpdateCallback) {
+    async startSorting(graphData, updateCallback, serverUpdateCallback) {
         if (this.isAnimating) {
             console.log('Sorting already in progress');
             return;
@@ -229,6 +294,9 @@ export class ParticleSorter {
         
         console.log('Starting particle grid sorting...');
         this.isAnimating = true;
+        
+        // Prepare graph data and merge edges into nodes
+        const particles = this.prepareGraphData(graphData);
         
         // Calculate target positions
         const targets = this.calculateGridPositions(particles);
@@ -238,7 +306,7 @@ export class ParticleSorter {
         
         // Update server with final positions
         if (serverUpdateCallback) {
-            for (const [key, particle] of particles) {
+            for (const [key, particle] of Object.entries(particles)) {
                 await serverUpdateCallback(key, particle);
             }
         }

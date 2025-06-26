@@ -1,7 +1,7 @@
-// Test for particle shuffling functionality
-// This test verifies that the centrality-based shuffling algorithm works correctly
+// Test for particle sorting functionality
+// This test verifies that the grid-based sorting algorithm works correctly
 
-import { ParticleShuffler } from '../src/public/sort-particles.js';
+import { ParticleSorter } from '../src/public/sort-particles.js';
 
 // Mock canvas for testing
 const mockCanvas = {
@@ -9,227 +9,187 @@ const mockCanvas = {
     height: 600
 };
 
-// Test data: particles with different connection counts
-const testParticles = new Map([
-    ['hub', {
-        x: 100, y: 100, radius: 20, title: 'Hub Node',
-        edges: [
-            { key: 'node1', label: 'connects to' },
-            { key: 'node2', label: 'connects to' },
-            { key: 'node3', label: 'connects to' },
-            { key: 'node4', label: 'connects to' }
-        ]
-    }],
-    ['node1', {
-        x: 200, y: 200, radius: 20, title: 'Node 1',
-        edges: [
-            { key: 'hub', label: 'connects to' },
-            { key: 'node2', label: 'connects to' }
-        ]
-    }],
-    ['node2', {
-        x: 300, y: 300, radius: 20, title: 'Node 2',
-        edges: [
-            { key: 'hub', label: 'connects to' },
-            { key: 'node1', label: 'connects to' }
-        ]
-    }],
-    ['node3', {
-        x: 400, y: 400, radius: 20, title: 'Node 3',
-        edges: [
-            { key: 'hub', label: 'connects to' }
-        ]
-    }],
-    ['node4', {
-        x: 500, y: 500, radius: 20, title: 'Node 4',
-        edges: [
-            { key: 'hub', label: 'connects to' }
-        ]
-    }],
-    ['isolated', {
-        x: 600, y: 600, radius: 20, title: 'Isolated Node',
-        edges: []
-    }]
-]);
+// Test data: particles with different connection counts in graph format
+const testGraphData = {
+    nodes: {
+        'hub': {
+            x: 100, y: 100, radius: 20, title: 'Hub Node'
+        },
+        'node1': {
+            x: 200, y: 200, radius: 20, title: 'Node 1'
+        },
+        'node2': {
+            x: 300, y: 300, radius: 20, title: 'Node 2'
+        },
+        'node3': {
+            x: 400, y: 400, radius: 20, title: 'Node 3'
+        },
+        'node4': {
+            x: 500, y: 500, radius: 20, title: 'Node 4'
+        },
+        'isolated': {
+            x: 600, y: 600, radius: 20, title: 'Isolated Node'
+        }
+    },
+    edges: {
+        'hub-node1': { source: 'hub', target: 'node1', label: 'connects to' },
+        'hub-node2': { source: 'hub', target: 'node2', label: 'connects to' },
+        'hub-node3': { source: 'hub', target: 'node3', label: 'connects to' },
+        'hub-node4': { source: 'hub', target: 'node4', label: 'connects to' },
+        'node1-node2': { source: 'node1', target: 'node2', label: 'connects to' }
+    }
+};
 
 function runTests() {
-    console.log('🧪 Starting Particle Shuffling Tests...\n');
+    console.log('🧪 Starting Particle Sorting Tests...\n');
     
-    const shuffler = new ParticleShuffler(mockCanvas);
+    const sorter = new ParticleSorter(mockCanvas);
     let testsPassed = 0;
     let totalTests = 0;
     
-    // Test 1: Centrality Calculation
+    // Test 1: Graph Data Preparation
     totalTests++;
-    console.log('Test 1: Centrality Calculation');
+    console.log('Test 1: Graph Data Preparation');
     try {
-        const centrality = shuffler.calculateCentrality(testParticles);
+        const preparedData = sorter.prepareGraphData(testGraphData);
         
-        const expectedCentrality = {
+        // Check if edges were merged correctly
+        const expectedConnections = {
             'hub': 4,      // 4 connections
-            'node1': 2,    // 2 connections
-            'node2': 2,    // 2 connections
-            'node3': 1,    // 1 connection
-            'node4': 1,    // 1 connection
+            'node1': 2,    // 2 connections (hub + node2)
+            'node2': 2,    // 2 connections (hub + node1)
+            'node3': 1,    // 1 connection (hub)
+            'node4': 1,    // 1 connection (hub)
             'isolated': 0  // 0 connections
         };
         
-        let centralityCorrect = true;
-        for (const [key, expectedCount] of Object.entries(expectedCentrality)) {
-            if (centrality.get(key) !== expectedCount) {
-                console.log(`❌ Centrality for ${key}: expected ${expectedCount}, got ${centrality.get(key)}`);
-                centralityCorrect = false;
+        let preparationCorrect = true;
+        for (const [key, expectedCount] of Object.entries(expectedConnections)) {
+            const actualCount = preparedData[key]?.edges?.length || 0;
+            if (actualCount !== expectedCount) {
+                console.log(`❌ Connections for ${key}: expected ${expectedCount}, got ${actualCount}`);
+                preparationCorrect = false;
             }
         }
         
-        if (centralityCorrect) {
-            console.log('✅ Centrality calculation correct');
+        if (preparationCorrect) {
+            console.log('✅ Graph data preparation correct');
             testsPassed++;
         } else {
-            console.log('❌ Centrality calculation failed');
+            console.log('❌ Graph data preparation failed');
         }
     } catch (error) {
-        console.log('❌ Centrality calculation threw error:', error.message);
+        console.log('❌ Graph data preparation threw error:', error.message);
     }
     
-    // Test 2: Target Position Calculation
+    // Test 2: Cluster Detection
     totalTests++;
-    console.log('\nTest 2: Target Position Calculation');
+    console.log('\nTest 2: Cluster Detection');
     try {
-        const centrality = shuffler.calculateCentrality(testParticles);
-        const targets = shuffler.calculateTargetPositions(testParticles, centrality);
+        const preparedData = sorter.prepareGraphData(testGraphData);
+        const clusters = sorter.detectClusters(preparedData);
         
-        const centerX = mockCanvas.width / 2;  // 400
-        const centerY = mockCanvas.height / 2; // 300
+        // Should detect 2 clusters: main cluster (5 nodes) and isolated (1 node)
+        const expectedClusterSizes = [5, 1].sort((a, b) => b - a);
+        const actualClusterSizes = clusters.map(c => c.length).sort((a, b) => b - a);
         
-        // Hub node (highest centrality) should be closest to center
-        const hubTarget = targets.get('hub');
-        const hubDistanceFromCenter = Math.sqrt(
-            Math.pow(hubTarget.x - centerX, 2) + Math.pow(hubTarget.y - centerY, 2)
-        );
-        
-        // Isolated node (lowest centrality) should be furthest from center
-        const isolatedTarget = targets.get('isolated');
-        const isolatedDistanceFromCenter = Math.sqrt(
-            Math.pow(isolatedTarget.x - centerX, 2) + Math.pow(isolatedTarget.y - centerY, 2)
-        );
-        
-        if (hubDistanceFromCenter < isolatedDistanceFromCenter) {
-            console.log('✅ High centrality node closer to center than low centrality node');
-            console.log(`   Hub distance: ${hubDistanceFromCenter.toFixed(2)}, Isolated distance: ${isolatedDistanceFromCenter.toFixed(2)}`);
-            testsPassed++;
+        let clustersCorrect = true;
+        if (actualClusterSizes.length !== expectedClusterSizes.length) {
+            clustersCorrect = false;
+            console.log(`❌ Expected ${expectedClusterSizes.length} clusters, got ${actualClusterSizes.length}`);
         } else {
-            console.log('❌ Target positioning incorrect');
-            console.log(`   Hub distance: ${hubDistanceFromCenter.toFixed(2)}, Isolated distance: ${isolatedDistanceFromCenter.toFixed(2)}`);
-        }
-    } catch (error) {
-        console.log('❌ Target position calculation threw error:', error.message);
-    }
-    
-    // Test 3: Concentric Ring Distribution
-    totalTests++;
-    console.log('\nTest 3: Concentric Ring Distribution');
-    try {
-        const centrality = shuffler.calculateCentrality(testParticles);
-        const targets = shuffler.calculateTargetPositions(testParticles, centrality);
-        
-        const centerX = mockCanvas.width / 2;
-        const centerY = mockCanvas.height / 2;
-        
-        // Group nodes by centrality and check if they're at similar distances
-        const centralityGroups = new Map();
-        for (const [key, particle] of testParticles) {
-            const edgeCount = particle.edges.length;
-            if (!centralityGroups.has(edgeCount)) {
-                centralityGroups.set(edgeCount, []);
-            }
-            centralityGroups.get(edgeCount).push(key);
-        }
-        
-        let ringDistributionCorrect = true;
-        for (const [centralityLevel, nodeKeys] of centralityGroups) {
-            if (nodeKeys.length > 1) {
-                const distances = nodeKeys.map(key => {
-                    const target = targets.get(key);
-                    return Math.sqrt(
-                        Math.pow(target.x - centerX, 2) + Math.pow(target.y - centerY, 2)
-                    );
-                });
-                
-                // Check if all nodes at same centrality level are at similar distances
-                const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
-                const maxDeviation = Math.max(...distances.map(d => Math.abs(d - avgDistance)));
-                
-                // Allow some tolerance for positioning variation
-                if (maxDeviation > avgDistance * 0.1) { // 10% tolerance
-                    console.log(`❌ Nodes with ${centralityLevel} connections not at similar distances`);
-                    console.log(`   Average distance: ${avgDistance.toFixed(2)}, Max deviation: ${maxDeviation.toFixed(2)}`);
-                    ringDistributionCorrect = false;
+            for (let i = 0; i < expectedClusterSizes.length; i++) {
+                if (actualClusterSizes[i] !== expectedClusterSizes[i]) {
+                    clustersCorrect = false;
+                    console.log(`❌ Cluster ${i}: expected size ${expectedClusterSizes[i]}, got ${actualClusterSizes[i]}`);
                 }
             }
         }
         
-        if (ringDistributionCorrect) {
-            console.log('✅ Nodes with same centrality positioned at similar distances from center');
+        if (clustersCorrect) {
+            console.log('✅ Cluster detection correct');
+            console.log(`   Found clusters with sizes: ${actualClusterSizes.join(', ')}`);
             testsPassed++;
         }
     } catch (error) {
-        console.log('❌ Ring distribution test threw error:', error.message);
+        console.log('❌ Cluster detection threw error:', error.message);
     }
     
-    // Test 4: Boundary Constraints
+    // Test 3: Grid Position Calculation
     totalTests++;
-    console.log('\nTest 4: Boundary Constraints');
+    console.log('\nTest 3: Grid Position Calculation');
     try {
-        const centrality = shuffler.calculateCentrality(testParticles);
-        const targets = shuffler.calculateTargetPositions(testParticles, centrality);
+        const preparedData = sorter.prepareGraphData(testGraphData);
+        const positions = sorter.calculateGridPositions(preparedData);
         
-        let allWithinBounds = true;
-        for (const [key, target] of targets) {
-            const particle = testParticles.get(key);
-            if (target.x < particle.radius || target.x > mockCanvas.width - particle.radius ||
-                target.y < particle.radius || target.y > mockCanvas.height - particle.radius) {
-                console.log(`❌ Node ${key} positioned outside canvas bounds`);
-                allWithinBounds = false;
+        // All particles should have valid positions
+        let allPositionsValid = true;
+        for (const [key, position] of positions) {
+            if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+                console.log(`❌ Invalid position for ${key}:`, position);
+                allPositionsValid = false;
             }
-        }
-        
-        if (allWithinBounds) {
-            console.log('✅ All nodes positioned within canvas boundaries');
-            testsPassed++;
-        }
-    } catch (error) {
-        console.log('❌ Boundary constraints test threw error:', error.message);
-    }
-    
-    // Test 5: Minimum Distance from Center
-    totalTests++;
-    console.log('\nTest 5: Minimum Distance from Center');
-    try {
-        const centrality = shuffler.calculateCentrality(testParticles);
-        const targets = shuffler.calculateTargetPositions(testParticles, centrality);
-        
-        const centerX = mockCanvas.width / 2;
-        const centerY = mockCanvas.height / 2;
-        
-        let allAboveMinDistance = true;
-        for (const [key, target] of targets) {
-            const distance = Math.sqrt(
-                Math.pow(target.x - centerX, 2) + Math.pow(target.y - centerY, 2)
-            );
             
-            if (distance < shuffler.minRadius) {
-                console.log(`❌ Node ${key} positioned too close to center: ${distance.toFixed(2)} < ${shuffler.minRadius}`);
-                allAboveMinDistance = false;
+            // Check if position is within canvas bounds
+            const particle = preparedData[key];
+            const radius = particle ? particle.radius : 20;
+            if (position.y < radius || position.y > mockCanvas.height - radius) {
+                console.log(`❌ Position for ${key} outside canvas bounds: (${position.x}, ${position.y})`);
+                allPositionsValid = false;
             }
         }
         
-        if (allAboveMinDistance) {
-            console.log('✅ All nodes respect minimum distance from center');
+        if (allPositionsValid) {
+            console.log('✅ All grid positions are valid and within bounds');
             testsPassed++;
         }
     } catch (error) {
-        console.log('❌ Minimum distance test threw error:', error.message);
+        console.log('❌ Grid position calculation threw error:', error.message);
+    }
+    
+    // Test 4: Connection-based Hierarchy
+    totalTests++;
+    console.log('\nTest 4: Connection-based Hierarchy');
+    try {
+        const preparedData = sorter.prepareGraphData(testGraphData);
+        const positions = sorter.calculateGridPositions(preparedData);
+        
+        // Hub (4 connections) should be positioned higher (lower Y) than node3 (1 connection)
+        const hubPos = positions.get('hub');
+        const node3Pos = positions.get('node3');
+        
+        if (hubPos && node3Pos && hubPos.y < node3Pos.y) {
+            console.log('✅ Higher connection nodes positioned above lower connection nodes');
+            console.log(`   Hub (4 conn) Y: ${hubPos.y.toFixed(1)}, Node3 (1 conn) Y: ${node3Pos.y.toFixed(1)}`);
+            testsPassed++;
+        } else {
+            console.log('❌ Connection-based hierarchy not working correctly');
+            console.log(`   Hub Y: ${hubPos?.y}, Node3 Y: ${node3Pos?.y}`);
+        }
+    } catch (error) {
+        console.log('❌ Hierarchy test threw error:', error.message);
+    }
+    
+    // Test 5: Isolated Node Handling
+    totalTests++;
+    console.log('\nTest 5: Isolated Node Handling');
+    try {
+        const preparedData = sorter.prepareGraphData(testGraphData);
+        const positions = sorter.calculateGridPositions(preparedData);
+        
+        // Isolated node should have a valid position
+        const isolatedPos = positions.get('isolated');
+        
+        if (isolatedPos && typeof isolatedPos.x === 'number' && typeof isolatedPos.y === 'number') {
+            console.log('✅ Isolated node positioned correctly');
+            console.log(`   Isolated position: (${isolatedPos.x.toFixed(1)}, ${isolatedPos.y.toFixed(1)})`);
+            testsPassed++;
+        } else {
+            console.log('❌ Isolated node not positioned correctly');
+            console.log(`   Isolated position:`, isolatedPos);
+        }
+    } catch (error) {
+        console.log('❌ Isolated node test threw error:', error.message);
     }
     
     // Test Summary
@@ -237,7 +197,7 @@ function runTests() {
     console.log(`🧪 Test Results: ${testsPassed}/${totalTests} tests passed`);
     
     if (testsPassed === totalTests) {
-        console.log('🎉 All tests passed! Particle shuffling algorithm is working correctly.');
+        console.log('🎉 All tests passed! Particle sorting algorithm is working correctly.');
         return true;
     } else {
         console.log('⚠️  Some tests failed. Please check the implementation.');

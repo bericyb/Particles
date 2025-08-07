@@ -13,7 +13,7 @@ export class ParticleShuffler {
         this.maxRadius = null; // Will be calculated based on canvas size
         
         // New cluster separation properties
-        this.clusterSeparationDistance = 400; // Minimum distance between cluster centers
+        this.clusterSeparationDistance = 200; // Minimum distance between cluster centers
         this.clusterBoundaryPadding = 80; // Buffer space around each cluster
         this.interClusterRepulsion = 200; // Force strength between different clusters
         this.enableClusterSeparation = true; // Toggle cluster separation feature

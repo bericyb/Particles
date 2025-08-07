@@ -1,5 +1,5 @@
-import { addRandomParticles, drawParticles } from "./utils.js"
-import { repelAndAttract } from "./repel_attract.js"
+import { addRandomParticles, drawParticles } from "../utils.js"
+import { repelAndAttract } from "../repel_attract.js"
 
 // Define particle.radius constant for particle collision detection
 const particle.radius = 20;

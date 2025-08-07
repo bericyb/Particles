@@ -6,8 +6,8 @@ export class ParticleSorter {
         this.canvas = canvas;
         this.isAnimating = false;
         this.animationSpeed = 0.05; // Faster than shuffle (0.02)
-        this.nodeSpacing = 300; // Fixed spacing between nodes
-        this.clusterSpacing = 600; // Spacing between clusters
+        this.nodeSpacing = 80; // Fixed spacing between nodes
+        this.clusterSpacing = 100; // Spacing between clusters
         this.topMargin = 80; // Top margin to account for buttons
         this.leftMargin = 30; // Left margin
         this.diagonalOffset = 30; // Vertical offset for diagonal staircase effect

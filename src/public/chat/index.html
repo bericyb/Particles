@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Left sidebar with conversation history -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Conversations</h2>
+                <button class="btn btn-primary" id="newChatBtn">New Chat</button>
+            </div>
+            <div class="conversation-list" id="conversationList">
+                <!-- Conversations will be populated here -->
+            </div>
+        </div>
+
+        <!-- Main chat area -->
+        <div class="main-chat">
+            <!-- Branch visualization panel -->
+            <div class="branch-panel" id="branchPanel">
+                <div class="branch-header">
+                    <h3>Conversation Tree</h3>
+                    <div class="branch-controls">
+                        <button class="btn btn-sm" id="collapseBranchesBtn" title="Collapse All">⊟</button>
+                        <button class="btn btn-sm" id="expandBranchesBtn" title="Expand All">⊞</button>
+                    </div>
+                </div>
+                <div class="branch-tree" id="branchTree">
+                    <!-- Branch tree will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Chat messages area -->
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div class="chat-title-section">
+                        <h1 id="chatTitle">New Conversation</h1>
+                        <div class="active-branch-indicator" id="activeBranchIndicator">
+                            <span class="branch-dot"></span>
+                            <span class="branch-name">Main Thread</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" id="toggleSidebarBtn">☰</button>
+                </div>
+
+                <div class="messages-container" id="messagesContainer">
+                    <div class="welcome-message">
+                        <p>Welcome! Start a conversation by typing a message below.</p>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-container">
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="Type your message here..." 
+                            rows="1"
+                        ></textarea>
+                        <button id="sendBtn" class="btn btn-primary" disabled>Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Selection Popup -->
+    <div class="selection-popup hidden" id="selectionPopup">
+        <div class="popup-header">
+            <span class="selected-text-preview" id="selectedTextPreview"></span>
+        </div>
+        <div class="popup-actions">
+            <button class="btn btn-primary" id="createBranchBtn">Create Branch</button>
+            <button class="btn btn-secondary" id="askInlineBtn">Ask Question</button>
+            <button class="btn btn-tertiary" id="cancelSelectionBtn">Cancel</button>
+        </div>
+        <div class="popup-input hidden" id="popupInput">
+            <textarea placeholder="Enter your question or comment..." id="popupTextarea"></textarea>
+            <div class="popup-input-actions">
+                <button class="btn btn-primary" id="confirmPopupBtn">Confirm</button>
+                <button class="btn btn-secondary" id="cancelPopupBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branch Context Menu -->
+    <div class="context-menu hidden" id="branchContextMenu">
+        <div class="context-menu-item" id="switchToBranchBtn">Switch to Branch</div>
+        <div class="context-menu-item" id="mergeBranchBtn">Merge Branch</div>
+        <div class="context-menu-item" id="renameBranchBtn">Rename Branch</div>
+        <div class="context-menu-item danger" id="deleteBranchBtn">Delete Branch</div>
+    </div>
+
+    <!-- Merge Strategy Modal -->
+    <div class="modal hidden" id="mergeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Merge Branch</h3>
+                <button class="modal-close" id="closeMergeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <p>How would you like to merge this branch?</p>
+                <div class="merge-options">
+                    <label class="radio-option">
+                        <input type="radio" name="mergeStrategy" value="append" checked>
+                        <span>Append to end of main thread</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mergeStrategy" value="insert">
+                        <span>Insert at fork point</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="confirmMergeBtn">Merge</button>
+                <button class="btn btn-secondary" id="cancelMergeBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline Question Template -->
+    <template id="inlineQuestionTemplate">
+        <div class="inline-question-container">
+            <div class="inline-question-header">
+                <span class="inline-question-label">Ask a question about this text:</span>
+                <button class="inline-question-close">×</button>
+            </div>
+            <div class="inline-question-input">
+                <textarea placeholder="What would you like to know?"></textarea>
+                <button class="btn btn-primary inline-question-send" disabled>Ask</button>
+            </div>
+            <div class="inline-question-response hidden">
+                <div class="inline-response-content"></div>
+            </div>
+        </div>
+    </template>
+
+    <script src="chat.js"></script>
+</body>
+</html>

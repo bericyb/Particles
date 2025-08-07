@@ -44,15 +44,15 @@ function setScaledFont(ctx, radius) {
 	ctx.font = `${fontSize}px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif`;
 }
 
-export function drawParticles(ctx, particles, showNodeLabels = true, showEdgeLabels = true) {
+export function drawParticles(ctx, particles, showNodeLabels = true, showEdgeLabels = true, selectedNodes = new Set()) {
 	// Set default text alignment
 	ctx.textAlign = "center"
 
 	// Draw using GraphData format: {nodes: {}, edges: {}}
-	drawGraph(ctx, particles, showNodeLabels, showEdgeLabels);
+	drawGraph(ctx, particles, showNodeLabels, showEdgeLabels, selectedNodes);
 }
 
-function drawGraph(ctx, graphData, showNodeLabels = true, showEdgeLabels = true) {
+function drawGraph(ctx, graphData, showNodeLabels = true, showEdgeLabels = true, selectedNodes = new Set()) {
 	const { nodes, edges } = graphData;
 
 	// Calculate maximum edge count for better color distribution
@@ -104,6 +104,15 @@ function drawGraph(ctx, graphData, showNodeLabels = true, showEdgeLabels = true)
 		ctx.arc(node.x, node.y, node.radius, 0, FULL_CIRCLE, 1);
 		ctx.fillStyle = dynamicColor;
 		ctx.fill();
+		
+		// Draw selection outline if node is selected
+		if (selectedNodes.has(nodeKey)) {
+			ctx.beginPath();
+			ctx.arc(node.x, node.y, node.radius + 3, 0, FULL_CIRCLE, 1);
+			ctx.strokeStyle = "#ff6b35"; // Orange selection color
+			ctx.lineWidth = 3;
+			ctx.stroke();
+		}
 		
 		// Draw node label if node labels are enabled
 		if (showNodeLabels) {

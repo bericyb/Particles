@@ -18,6 +18,7 @@ import {
   getGraphStats,
   debugGraphService
 } from './handlers';
+import chatRoutes from './chatRoutes';
 
 const router = Router();
 
@@ -46,6 +47,9 @@ router.get('/edges/:nodeA/:nodeB', getEdgesBetween);
 router.get('/example', getExampleData);
 router.get('/stats', getStats);
 router.get('/debug', debugGraphService);
+
+// Chat routes
+router.use('/api', chatRoutes);
 
 // Serve tree.html on /tree route
 router.get('/tree', (req: Request, res: Response) => {

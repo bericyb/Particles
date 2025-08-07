@@ -1,5 +1,4 @@
-import { addRandomParticles, drawParticles } from './utils.js';
-import { repelAndAttract } from './repel_attract.js';
+import { drawParticles } from './utils.js';
 import { ParticleShuffler } from './shuffle-particles.js';
 import { ParticleSorter } from './sort-particles.js';
 
@@ -11,7 +10,7 @@ function generateUUID() {
     // Fallback UUID v4 implementation
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
         /[xy]/g,
-        function (c) {
+        function(c) {
             const r = (Math.random() * 16) | 0;
             const v = c == 'x' ? r : (r & 0x3) | 0x8;
             return v.toString(16);
@@ -44,13 +43,13 @@ function connectWebSocket() {
     try {
         ws = new WebSocket('ws://localhost:3001/ws');
 
-        ws.onopen = function (event) {
+        ws.onopen = function(event) {
             console.log('WebSocket connected');
             wsReconnectAttempts = 0; // Reset reconnect attempts on successful connection
             showNotification('Real-time updates connected', 2000);
         };
 
-        ws.onmessage = function (event) {
+        ws.onmessage = function(event) {
             try {
                 const message = JSON.parse(event.data);
                 handleWebSocketMessage(message);
@@ -59,7 +58,7 @@ function connectWebSocket() {
             }
         };
 
-        ws.onclose = function (event) {
+        ws.onclose = function(event) {
             console.log('WebSocket disconnected');
             ws = null;
 
@@ -81,7 +80,7 @@ function connectWebSocket() {
             }
         };
 
-        ws.onerror = function (error) {
+        ws.onerror = function(error) {
             console.error('WebSocket error:', error);
         };
     } catch (error) {
@@ -161,29 +160,29 @@ connectWebSocket();
 // Fetch initial graph data from backend (fallback)
 var particles = { nodes: {}, edges: {} };
 fetch('http://localhost:3001/data')
-	.then(res => {
-		if (!res.ok) {
-			throw new Error(`HTTP error! status: ${res.status}`);
-		}
-		return res.json();
-	})
-	.then(data => {
-		console.log('Fetched graph data:', data);
-		
-		// Expect GraphData format: {nodes: {}, edges: {}}
-		if (data && data.nodes && data.edges) {
-			particles = data;
-			console.log('Using backend graph data:', particles);
-		} else {
-			particles = { nodes: {}, edges: {} };
-			console.log('No valid graph data found, using empty graph');
-		}
-	})
-	.catch(error => {
-		console.warn('Failed to fetch graph data from backend:', error);
-		console.log('Falling back to empty graph');
-		particles = { nodes: {}, edges: {} };
-	});
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log('Fetched graph data:', data);
+
+        // Expect GraphData format: {nodes: {}, edges: {}}
+        if (data && data.nodes && data.edges) {
+            particles = data;
+            console.log('Using backend graph data:', particles);
+        } else {
+            particles = { nodes: {}, edges: {} };
+            console.log('No valid graph data found, using empty graph');
+        }
+    })
+    .catch(error => {
+        console.warn('Failed to fetch graph data from backend:', error);
+        console.log('Falling back to empty graph');
+        particles = { nodes: {}, edges: {} };
+    });
 
 const canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
@@ -290,7 +289,7 @@ sortParticlesBtn.addEventListener('click', async () => {
         // Start the sorting process
         await particleSorter.startSorting(
             particles,
-            () => {}, // Update callback - drawing happens automatically in animate loop
+            () => { }, // Update callback - drawing happens automatically in animate loop
             async (key, particle) => {
                 // Server update callback
                 try {
@@ -347,7 +346,7 @@ shuffleParticlesBtn.addEventListener('click', async () => {
         // Start the shuffling process
         await particleShuffler.startShuffling(
             particles,
-            () => {}, // Update callback - drawing happens automatically in animate loop
+            () => { }, // Update callback - drawing happens automatically in animate loop
             async (key, particle) => {
                 // Server update callback
                 try {
@@ -739,203 +738,203 @@ document.getElementById('edgeSearch').addEventListener('input', (e) => {
 
 // New edge management functions
 async function createEdge(source, target, options = {}) {
-	try {
-		const response = await fetch('http://localhost:3001/edge', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				source,
-				target,
-				label: options.label || '',
-				directed: options.directed !== undefined ? options.directed : true,
-				weight: options.weight,
-				metadata: options.metadata
-			})
-		});
+    try {
+        const response = await fetch('http://localhost:3001/edge', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                source,
+                target,
+                label: options.label || '',
+                directed: options.directed !== undefined ? options.directed : true,
+                weight: options.weight,
+                metadata: options.metadata
+            })
+        });
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-		const result = await response.json();
-		return result.edgeId;
-	} catch (error) {
-		console.error('Failed to create edge:', error);
-		throw error;
-	}
+        const result = await response.json();
+        return result.edgeId;
+    } catch (error) {
+        console.error('Failed to create edge:', error);
+        throw error;
+    }
 }
 
 async function deleteEdge(edgeId) {
-	try {
-		const response = await fetch(`http://localhost:3001/edge/${edgeId}`, {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
+    try {
+        const response = await fetch(`http://localhost:3001/edge/${edgeId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-		return true;
-	} catch (error) {
-		console.error('Failed to delete edge:', error);
-		throw error;
-	}
+        return true;
+    } catch (error) {
+        console.error('Failed to delete edge:', error);
+        throw error;
+    }
 }
 
 async function getNodeEdges(nodeKey) {
-	try {
-		const response = await fetch(`http://localhost:3001/node/${nodeKey}/edges`);
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return await response.json();
-	} catch (error) {
-		console.error('Failed to get node edges:', error);
-		throw error;
-	}
+    try {
+        const response = await fetch(`http://localhost:3001/node/${nodeKey}/edges`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Failed to get node edges:', error);
+        throw error;
+    }
 }
 
 // Form submission event listener
 addParticleForm.addEventListener("submit", async (e) => {
-	e.preventDefault();
-	
-	const formData = new FormData(addParticleForm);
-	
-	// Collect edges from checked items
-	const selectedEdges = [];
-	document.querySelectorAll('input[name^="edge-"]:checked').forEach(checkbox => {
-		const particleKey = checkbox.name.replace('edge-', '');
-		const labelInput = document.querySelector(`input[name="label-${particleKey}"]`);
-		selectedEdges.push({
-			key: particleKey,
-			label: labelInput.value.trim() || ""
-		});
-	});
-	
-	// Parse and validate JSON data field
-	let parsedData = undefined;
-	const dataFieldValue = formData.get('data');
-	if (dataFieldValue && dataFieldValue.trim()) {
-		try {
-			parsedData = JSON.parse(dataFieldValue.trim());
-		} catch (error) {
-			alert(`Invalid JSON data: ${error.message}\n\nPlease check your JSON syntax and try again.`);
-			return;
-		}
-	}
-	
-	// Create node data (without edges)
-	const nodeData = {
-		x: parseFloat(formData.get('x')),
-		y: parseFloat(formData.get('y')),
-		title: formData.get('title'),
-		radius: parseFloat(formData.get('radius')),
-		data: parsedData
-	};
-	
-	const isUpdate = addParticlesModal.dataset.mode === "update";
-	let key;
-	
-	if (isUpdate) {
-		// For updates, get the key from the stored variable
-		key = currentEditingKey;
-	} else {
-		// For new particles, generate a UUID
-		key = generateUUID();
-	}
-	
-	try {
-		// Step 1: Add/update the node
-		const nodeResponse = await fetch(`http://localhost:3001/particle/${key}`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(nodeData)
-		});
-		
-		if (!nodeResponse.ok) {
-			throw new Error(`HTTP error! status: ${nodeResponse.status}`);
-		}
-		
-		// Step 2: Handle edge management for updates
-		if (isUpdate) {
-			// Get current edges for this node
-			const currentEdges = await getNodeEdges(key);
-			
-			// Delete edges that are no longer selected
-			for (const edge of currentEdges) {
-				const isStillSelected = selectedEdges.some(selected => 
-					(edge.source === key && edge.target === selected.key) ||
-					(edge.target === key && edge.source === selected.key)
-				);
-				
-				if (!isStillSelected) {
-					await deleteEdge(edge.id);
-				}
-			}
-		}
-		
-		// Step 3: Create new edges
-		for (const selectedEdge of selectedEdges) {
-			try {
-				await createEdge(key, selectedEdge.key, {
-					label: selectedEdge.label,
-					directed: true
-				});
-			} catch (edgeError) {
-				console.warn(`Failed to create edge from ${key} to ${selectedEdge.key}:`, edgeError);
-			}
-		}
-		
-		// Step 4: Refetch all data to update local state
-		const dataResponse = await fetch('http://localhost:3001/data');
-		if (!dataResponse.ok) {
-			throw new Error(`HTTP error! status: ${dataResponse.status}`);
-		}
-		
-		const data = await dataResponse.json();
-		if (data && data.nodes && data.edges) {
-			particles = data;
-		} else {
-			particles = { nodes: {}, edges: {} };
-		}
-		
-		// Close modal and reset form
-		addParticlesModal.classList.add("hidden");
-		addParticleForm.reset();
-		resetFormMode();
-		
-		console.log(`Particle ${isUpdate ? 'updated' : 'added'} successfully`);
-		showNotification(`Node ${isUpdate ? 'updated' : 'created'} successfully!`, 3000);
-		
-	} catch (error) {
-		console.error(`Error ${isUpdate ? 'updating' : 'adding'} particle:`, error);
-		showNotification(`Failed to ${isUpdate ? 'update' : 'add'} particle. Please try again.`, 4000);
-	}
+    e.preventDefault();
+
+    const formData = new FormData(addParticleForm);
+
+    // Collect edges from checked items
+    const selectedEdges = [];
+    document.querySelectorAll('input[name^="edge-"]:checked').forEach(checkbox => {
+        const particleKey = checkbox.name.replace('edge-', '');
+        const labelInput = document.querySelector(`input[name="label-${particleKey}"]`);
+        selectedEdges.push({
+            key: particleKey,
+            label: labelInput.value.trim() || ""
+        });
+    });
+
+    // Parse and validate JSON data field
+    let parsedData = undefined;
+    const dataFieldValue = formData.get('data');
+    if (dataFieldValue && dataFieldValue.trim()) {
+        try {
+            parsedData = JSON.parse(dataFieldValue.trim());
+        } catch (error) {
+            alert(`Invalid JSON data: ${error.message}\n\nPlease check your JSON syntax and try again.`);
+            return;
+        }
+    }
+
+    // Create node data (without edges)
+    const nodeData = {
+        x: parseFloat(formData.get('x')),
+        y: parseFloat(formData.get('y')),
+        title: formData.get('title'),
+        radius: parseFloat(formData.get('radius')),
+        data: parsedData
+    };
+
+    const isUpdate = addParticlesModal.dataset.mode === "update";
+    let key;
+
+    if (isUpdate) {
+        // For updates, get the key from the stored variable
+        key = currentEditingKey;
+    } else {
+        // For new particles, generate a UUID
+        key = generateUUID();
+    }
+
+    try {
+        // Step 1: Add/update the node
+        const nodeResponse = await fetch(`http://localhost:3001/particle/${key}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(nodeData)
+        });
+
+        if (!nodeResponse.ok) {
+            throw new Error(`HTTP error! status: ${nodeResponse.status}`);
+        }
+
+        // Step 2: Handle edge management for updates
+        if (isUpdate) {
+            // Get current edges for this node
+            const currentEdges = await getNodeEdges(key);
+
+            // Delete edges that are no longer selected
+            for (const edge of currentEdges) {
+                const isStillSelected = selectedEdges.some(selected =>
+                    (edge.source === key && edge.target === selected.key) ||
+                    (edge.target === key && edge.source === selected.key)
+                );
+
+                if (!isStillSelected) {
+                    await deleteEdge(edge.id);
+                }
+            }
+        }
+
+        // Step 3: Create new edges
+        for (const selectedEdge of selectedEdges) {
+            try {
+                await createEdge(key, selectedEdge.key, {
+                    label: selectedEdge.label,
+                    directed: true
+                });
+            } catch (edgeError) {
+                console.warn(`Failed to create edge from ${key} to ${selectedEdge.key}:`, edgeError);
+            }
+        }
+
+        // Step 4: Refetch all data to update local state
+        const dataResponse = await fetch('http://localhost:3001/data');
+        if (!dataResponse.ok) {
+            throw new Error(`HTTP error! status: ${dataResponse.status}`);
+        }
+
+        const data = await dataResponse.json();
+        if (data && data.nodes && data.edges) {
+            particles = data;
+        } else {
+            particles = { nodes: {}, edges: {} };
+        }
+
+        // Close modal and reset form
+        addParticlesModal.classList.add("hidden");
+        addParticleForm.reset();
+        resetFormMode();
+
+        console.log(`Particle ${isUpdate ? 'updated' : 'added'} successfully`);
+        showNotification(`Node ${isUpdate ? 'updated' : 'created'} successfully!`, 3000);
+
+    } catch (error) {
+        console.error(`Error ${isUpdate ? 'updating' : 'adding'} particle:`, error);
+        showNotification(`Failed to ${isUpdate ? 'update' : 'add'} particle. Please try again.`, 4000);
+    }
 });
 
 function handleClick(event) {
-	const bounding = canvas.getBoundingClientRect()
-	const x = (event.clientX - bounding.left - offsetX) / scale;
-	const y = (event.clientY - bounding.top - offsetY) / scale;
+    const bounding = canvas.getBoundingClientRect()
+    const x = (event.clientX - bounding.left - offsetX) / scale;
+    const y = (event.clientY - bounding.top - offsetY) / scale;
 
-	// Check if user clicked on a node
-	for (const [key, particle] of Object.entries(particles.nodes)) {
-		if (particle.x + particle.radius >= x && particle.x - particle.radius <= x && particle.y + particle.radius >= y && particle.y - particle.radius <= y) {
-			console.log("Click!")
-			
-			// Format the data field for display
-			let dataSection = '';
-			if (particle.data !== undefined && particle.data !== null) {
-				try {
-					const formattedData = JSON.stringify(particle.data, null, 2);
-					dataSection = `
+    // Check if user clicked on a node
+    for (const [key, particle] of Object.entries(particles.nodes)) {
+        if (particle.x + particle.radius >= x && particle.x - particle.radius <= x && particle.y + particle.radius >= y && particle.y - particle.radius <= y) {
+            console.log("Click!")
+
+            // Format the data field for display
+            let dataSection = '';
+            if (particle.data !== undefined && particle.data !== null) {
+                try {
+                    const formattedData = JSON.stringify(particle.data, null, 2);
+                    dataSection = `
 						<div class="node-data-section">
 							<h3>Data:</h3>
 							<pre class="node-data-content">${formattedData}</pre>
@@ -1008,143 +1007,143 @@ function handleClick(event) {
 
 // Function to handle editing a particle
 async function editParticle(key) {
-	try {
-		// Close the particle info modal
-		particleModal.classList.add("hidden");
-		
-		// Get the current particle data
-		const particle = particles.nodes[key];
-		
-		if (!particle) {
-			console.error(`Particle with key ${key} not found`);
-			return;
-		}
-		
-		// Store the key for the update operation
-		currentEditingKey = key;
-		
-		// Set form mode to "update"
-		setUpdateFormMode();
-		
-		// Populate form fields
-		const form = document.getElementById("addParticleForm");
-		form.elements["title"].value = particle.title || "";
-		form.elements["x"].value = particle.x || 100;
-		form.elements["y"].value = particle.y || 100;
-		form.elements["radius"].value = particle.radius || 20;
-		
-		// Populate data field if it exists
-		if (particle.data !== undefined && particle.data !== null) {
-			try {
-				form.elements["data"].value = JSON.stringify(particle.data, null, 2);
-			} catch (error) {
-				console.warn('Error serializing particle data for editing:', error);
-				form.elements["data"].value = '';
-			}
-		} else {
-			form.elements["data"].value = '';
-		}
-		
-		// Load available particles for edges
-		await loadAvailableParticles();
-		
-		// Get current edges for this node and populate checkboxes
-		try {
-			const currentEdges = await getNodeEdges(key);
-			
-			// Wait a bit for the edge items to be rendered
-			setTimeout(() => {
-				currentEdges.forEach(edge => {
-					// Determine the target node (the other end of the edge)
-					const targetKey = edge.source === key ? edge.target : edge.source;
-					const checkbox = document.getElementById(`edge-${targetKey}`);
-					if (checkbox) {
-						checkbox.checked = true;
-						const labelInput = document.querySelector(`input[name="label-${targetKey}"]`);
-						if (labelInput) {
-							labelInput.disabled = false;
-							labelInput.value = edge.label || "";
-						}
-					}
-				});
-			}, 100);
-		} catch (error) {
-			console.warn('Failed to load current edges for editing:', error);
-		}
-		
-		// Show the modal
-		addParticlesModal.classList.remove("hidden");
-	} catch (error) {
-		console.error("Error preparing particle for editing:", error);
-	}
+    try {
+        // Close the particle info modal
+        particleModal.classList.add("hidden");
+
+        // Get the current particle data
+        const particle = particles.nodes[key];
+
+        if (!particle) {
+            console.error(`Particle with key ${key} not found`);
+            return;
+        }
+
+        // Store the key for the update operation
+        currentEditingKey = key;
+
+        // Set form mode to "update"
+        setUpdateFormMode();
+
+        // Populate form fields
+        const form = document.getElementById("addParticleForm");
+        form.elements["title"].value = particle.title || "";
+        form.elements["x"].value = particle.x || 100;
+        form.elements["y"].value = particle.y || 100;
+        form.elements["radius"].value = particle.radius || 20;
+
+        // Populate data field if it exists
+        if (particle.data !== undefined && particle.data !== null) {
+            try {
+                form.elements["data"].value = JSON.stringify(particle.data, null, 2);
+            } catch (error) {
+                console.warn('Error serializing particle data for editing:', error);
+                form.elements["data"].value = '';
+            }
+        } else {
+            form.elements["data"].value = '';
+        }
+
+        // Load available particles for edges
+        await loadAvailableParticles();
+
+        // Get current edges for this node and populate checkboxes
+        try {
+            const currentEdges = await getNodeEdges(key);
+
+            // Wait a bit for the edge items to be rendered
+            setTimeout(() => {
+                currentEdges.forEach(edge => {
+                    // Determine the target node (the other end of the edge)
+                    const targetKey = edge.source === key ? edge.target : edge.source;
+                    const checkbox = document.getElementById(`edge-${targetKey}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        const labelInput = document.querySelector(`input[name="label-${targetKey}"]`);
+                        if (labelInput) {
+                            labelInput.disabled = false;
+                            labelInput.value = edge.label || "";
+                        }
+                    }
+                });
+            }, 100);
+        } catch (error) {
+            console.warn('Failed to load current edges for editing:', error);
+        }
+
+        // Show the modal
+        addParticlesModal.classList.remove("hidden");
+    } catch (error) {
+        console.error("Error preparing particle for editing:", error);
+    }
 }
 
 // Function to handle deleting a particle
 async function deleteParticle(key) {
-	try {
-		// Get the particle data for confirmation message
-		const particle = particles.nodes[key];
-		
-		if (!particle) {
-			console.error(`Particle with key ${key} not found`);
-			return;
-		}
-		
-		// Show confirmation dialog
-		const confirmMessage = `Are you sure you want to delete the node "${key}"?\n\nThis will also remove all connected edges and cannot be undone.`;
-		const confirmed = confirm(confirmMessage);
-		
-		if (!confirmed) {
-			return;
-		}
-		
-		// Close the particle info modal
-		particleModal.classList.add("hidden");
-		
-		// Delete particle on server
-		const response = await fetch(`http://localhost:3001/particle/${key}`, {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
-		
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		
-		const result = await response.json();
-		
-		if (result.success) {
-			// Remove from local state
-			delete particles.nodes[key];
-			
-			// Show success notification
-			showNotification(`Node "${key}" deleted successfully`, 4000);
-			console.log(`Particle ${key} deleted successfully`);
-		} else {
-			throw new Error(result.message || 'Failed to delete particle');
-		}
-		
-	} catch (error) {
-		console.error('Error deleting particle:', error);
-		showNotification('Failed to delete node. Please try again.', 4000);
-		
-		// Optionally refetch data to ensure consistency
-		try {
-			const dataResponse = await fetch('http://localhost:3001/data');
-			if (dataResponse.ok) {
-				const data = await dataResponse.json();
-				if (data && data.nodes) {
-					particles = data;
-				} else {
-					particles = { nodes: {}, edges: {} };
-				}
-			}
-		} catch (refetchError) {
-			console.error('Error refetching data after delete failure:', refetchError);
-		}
-	}
+    try {
+        // Get the particle data for confirmation message
+        const particle = particles.nodes[key];
+
+        if (!particle) {
+            console.error(`Particle with key ${key} not found`);
+            return;
+        }
+
+        // Show confirmation dialog
+        const confirmMessage = `Are you sure you want to delete the node "${key}"?\n\nThis will also remove all connected edges and cannot be undone.`;
+        const confirmed = confirm(confirmMessage);
+
+        if (!confirmed) {
+            return;
+        }
+
+        // Close the particle info modal
+        particleModal.classList.add("hidden");
+
+        // Delete particle on server
+        const response = await fetch(`http://localhost:3001/particle/${key}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Remove from local state
+            delete particles.nodes[key];
+
+            // Show success notification
+            showNotification(`Node "${key}" deleted successfully`, 4000);
+            console.log(`Particle ${key} deleted successfully`);
+        } else {
+            throw new Error(result.message || 'Failed to delete particle');
+        }
+
+    } catch (error) {
+        console.error('Error deleting particle:', error);
+        showNotification('Failed to delete node. Please try again.', 4000);
+
+        // Optionally refetch data to ensure consistency
+        try {
+            const dataResponse = await fetch('http://localhost:3001/data');
+            if (dataResponse.ok) {
+                const data = await dataResponse.json();
+                if (data && data.nodes) {
+                    particles = data;
+                } else {
+                    particles = { nodes: {}, edges: {} };
+                }
+            }
+        } catch (refetchError) {
+            console.error('Error refetching data after delete failure:', refetchError);
+        }
+    }
 }
 
 canvas.addEventListener('dblclick', (event) =>
@@ -1156,12 +1155,22 @@ let offsetX = 0;
 let offsetY = 0;
 
 let isDragging = false;
+let isPanning = false;
 let startX, startY;
 let draggingObject = null;
 let draggingOffset = {
     x: 0,
     y: 0,
 };
+
+// Selection state management
+let selectedNodes = new Set();
+let draggedSelectedNodes = new Map(); // Store original positions and offsets for selected nodes
+
+// Selection box state management
+let isSelectionBoxActive = false;
+let selectionBoxStart = { x: 0, y: 0 };
+let selectionBoxEnd = { x: 0, y: 0 };
 
 // Debounce and server update functionality
 let draggedParticleKey = null;
@@ -1171,7 +1180,7 @@ let updateTimeout = null;
 // Debounce utility function
 function debounce(func, delay) {
     let timeoutId;
-    return function (...args) {
+    return function(...args) {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
@@ -1222,79 +1231,265 @@ async function updateParticleOnServer(particleKey, particle) {
     }
 }
 
-// Create debounced version of the update function
+// Batch update function for multiple particles
+async function updateMultipleParticlesOnServer(particleUpdates) {
+    try {
+        console.log(`Updating ${particleUpdates.length} particles on server:`, particleUpdates);
+
+        // Update each particle individually (could be optimized with a batch endpoint)
+        const updatePromises = particleUpdates.map(({ key, particle }) =>
+            fetch(`http://localhost:3001/particle/${key}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(particle),
+            })
+        );
+
+        const responses = await Promise.all(updatePromises);
+
+        // Check if all updates were successful
+        for (let i = 0; i < responses.length; i++) {
+            if (!responses[i].ok) {
+                throw new Error(`HTTP error for particle ${particleUpdates[i].key}! status: ${responses[i].status}`);
+            }
+        }
+
+        console.log('Multi-particle server update successful');
+
+        // Show success notification for multi-node updates
+        showNotification(`${particleUpdates.length} selected nodes updated`, 3000);
+    } catch (error) {
+        console.error('Failed to update multiple particles on server:', error);
+        showNotification('Failed to update selected nodes', 3000);
+        // Could implement rollback logic here if needed
+    }
+}
+
+// Create debounced versions of the update functions
 const debouncedUpdateParticle = debounce(updateParticleOnServer, 500);
+const debouncedUpdateMultipleParticles = debounce(updateMultipleParticlesOnServer, 500);
 
 canvas.addEventListener('mousedown', (e) => {
-	isDragging = true
-	const bounding = canvas.getBoundingClientRect()
-	const x = (e.clientX - bounding.left - offsetX) / scale;
-	const y = (e.clientY - bounding.top - offsetY) / scale;
+    const bounding = canvas.getBoundingClientRect();
+    const x = (e.clientX - bounding.left - offsetX) / scale;
+    const y = (e.clientY - bounding.top - offsetY) / scale;
 
-	// Check if user clicked on a node
-	for (let [key, particle] of Object.entries(particles.nodes)) {
-		if (particle.x + particle.radius >= x && particle.x - particle.radius <= x && particle.y + particle.radius >= y && particle.y - particle.radius <= y) {
-			draggingObject = particle
-			draggingOffset.x = x - particle.x
-			draggingOffset.y = y - particle.y
-			
-			// Store the particle key and original position for server update
-			draggedParticleKey = key;
-			originalPosition = {
-				x: particle.x,
-				y: particle.y
-			};
-			
-			return
-		}
-	}
-	startX = e.clientX;
-	startY = e.clientY;
-})
+    if (e.button === 2) {
+        // Right mouse button - start panning
+        isPanning = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        return;
+    }
+
+    if (e.button === 0) {
+        // Left mouse button
+        let clickedNodeKey = null;
+        let clickedParticle = null;
+
+        // Check if user clicked on a node
+        for (let [key, particle] of Object.entries(particles.nodes)) {
+            if (particle.x + particle.radius >= x && particle.x - particle.radius <= x &&
+                particle.y + particle.radius >= y && particle.y - particle.radius <= y) {
+                clickedNodeKey = key;
+                clickedParticle = particle;
+                break;
+            }
+        }
+
+        if (clickedNodeKey) {
+            if (e.shiftKey) {
+                // Shift + click: toggle selection
+                if (selectedNodes.has(clickedNodeKey)) {
+                    selectedNodes.delete(clickedNodeKey);
+                } else {
+                    selectedNodes.add(clickedNodeKey);
+                }
+            } else {
+                // Regular click on node: start dragging
+                if (selectedNodes.has(clickedNodeKey)) {
+                    // Dragging a selected node - prepare to move all selected nodes
+                    isDragging = true;
+                    draggingOffset.x = x - clickedParticle.x;
+                    draggingOffset.y = y - clickedParticle.y;
+
+                    // Store original positions for all selected nodes
+                    draggedSelectedNodes.clear();
+                    for (const nodeKey of selectedNodes) {
+                        const node = particles.nodes[nodeKey];
+                        if (node) {
+                            draggedSelectedNodes.set(nodeKey, {
+                                originalX: node.x,
+                                originalY: node.y,
+                                offsetX: x - node.x,
+                                offsetY: y - node.y
+                            });
+                        }
+                    }
+                } else {
+                    // Clear selection and drag single node
+                    selectedNodes.clear();
+                    isDragging = true;
+                    draggingObject = clickedParticle;
+                    draggingOffset.x = x - clickedParticle.x;
+                    draggingOffset.y = y - clickedParticle.y;
+
+                    // Store for server update
+                    draggedParticleKey = clickedNodeKey;
+                    originalPosition = {
+                        x: clickedParticle.x,
+                        y: clickedParticle.y
+                    };
+                }
+            }
+        } else {
+            // Clicked on empty space
+            if (e.shiftKey) {
+                // Shift + click on empty space: start selection box
+                isSelectionBoxActive = true;
+                selectionBoxStart.x = x;
+                selectionBoxStart.y = y;
+                selectionBoxEnd.x = x;
+                selectionBoxEnd.y = y;
+            } else {
+                // Regular click on empty space: clear selection
+                selectedNodes.clear();
+            }
+        }
+    }
+});
 
 canvas.addEventListener("mousemove", (e) => {
-	if (draggingObject) {
-		const bounding = canvas.getBoundingClientRect()
-		const x = (e.clientX - bounding.left - offsetX) / scale;
-		const y = (e.clientY - bounding.top - offsetY) / scale;
-		draggingObject.x = x - draggingOffset.x
-		draggingObject.y = y - draggingOffset.y
-		return
-	}
-	if (!isDragging) return;
+    const bounding = canvas.getBoundingClientRect();
+    const x = (e.clientX - bounding.left - offsetX) / scale;
+    const y = (e.clientY - bounding.top - offsetY) / scale;
 
-	const dx = ((e.clientX - startX) / scale)
-	const dy = ((e.clientY - startY) / scale)
+    if (isPanning) {
+        // Right mouse panning
+        const dx = ((e.clientX - startX) / scale);
+        const dy = ((e.clientY - startY) / scale);
 
-	offsetX += dx
-	offsetY += dy
+        offsetX += dx;
+        offsetY += dy;
 
-	startX = e.clientX
-	startY = e.clientY
-})
+        startX = e.clientX;
+        startY = e.clientY;
+        return;
+    }
+
+    if (isSelectionBoxActive) {
+        // Update selection box end coordinates
+        selectionBoxEnd.x = x;
+        selectionBoxEnd.y = y;
+    } else if (isDragging) {
+        if (draggingObject) {
+            // Single node dragging
+            draggingObject.x = x - draggingOffset.x;
+            draggingObject.y = y - draggingOffset.y;
+        } else if (draggedSelectedNodes.size > 0) {
+            // Multi-node dragging
+            for (const [nodeKey, dragInfo] of draggedSelectedNodes) {
+                const node = particles.nodes[nodeKey];
+                if (node) {
+                    node.x = x - dragInfo.offsetX;
+                    node.y = y - dragInfo.offsetY;
+                }
+            }
+        }
+    }
+});
 
 canvas.addEventListener("mouseup", (e) => {
-	// If we were dragging a particle, trigger debounced server update
-	if (draggingObject && draggedParticleKey) {
-		console.log(`Particle ${draggedParticleKey} drag ended, scheduling server update`);
-		debouncedUpdateParticle(draggedParticleKey, draggingObject);
-	}
-	
-	draggingObject = null
-	isDragging = false
-})
+    if (isPanning) {
+        isPanning = false;
+        return;
+    }
+
+    if (isSelectionBoxActive) {
+        // Complete selection box - find nodes within the box
+        const boxLeft = Math.min(selectionBoxStart.x, selectionBoxEnd.x);
+        const boxRight = Math.max(selectionBoxStart.x, selectionBoxEnd.x);
+        const boxTop = Math.min(selectionBoxStart.y, selectionBoxEnd.y);
+        const boxBottom = Math.max(selectionBoxStart.y, selectionBoxEnd.y);
+
+        // Find nodes within the selection box
+        for (const [nodeKey, node] of Object.entries(particles.nodes)) {
+            if (node.x >= boxLeft && node.x <= boxRight &&
+                node.y >= boxTop && node.y <= boxBottom) {
+                selectedNodes.add(nodeKey);
+            }
+        }
+
+        // Reset selection box state
+        isSelectionBoxActive = false;
+
+        // Show notification if nodes were selected
+        if (selectedNodes.size > 0) {
+            showNotification(`Selected ${selectedNodes.size} nodes`, 2000);
+        }
+    } else if (isDragging) {
+        if (draggingObject && draggedParticleKey) {
+            // Single node dragging - trigger server update
+            console.log(`Particle ${draggedParticleKey} drag ended, scheduling server update`);
+            debouncedUpdateParticle(draggedParticleKey, draggingObject);
+        } else if (draggedSelectedNodes.size > 0) {
+            // Multi-node dragging - batch update all selected nodes on server
+            console.log(`Multi-node drag ended, updating ${draggedSelectedNodes.size} nodes on server`);
+            const particleUpdates = [];
+            for (const [nodeKey, dragInfo] of draggedSelectedNodes) {
+                const node = particles.nodes[nodeKey];
+                if (node) {
+                    particleUpdates.push({ key: nodeKey, particle: node });
+                }
+            }
+            debouncedUpdateMultipleParticles(particleUpdates);
+            draggedSelectedNodes.clear();
+        }
+
+        draggingObject = null;
+        isDragging = false;
+    }
+});
 
 canvas.addEventListener('mouseleave', () => {
-    // If we were dragging a particle when mouse left canvas, trigger server update
-    if (draggingObject && draggedParticleKey) {
-        console.log(
-            `Particle ${draggedParticleKey} drag ended (mouse left canvas), scheduling server update`
-        );
-        debouncedUpdateParticle(draggedParticleKey, draggingObject);
+    // If we were dragging particles when mouse left canvas, trigger server updates
+    if (isDragging) {
+        if (draggingObject && draggedParticleKey) {
+            // Single node dragging
+            console.log(
+                `Particle ${draggedParticleKey} drag ended (mouse left canvas), scheduling server update`
+            );
+            debouncedUpdateParticle(draggedParticleKey, draggingObject);
+        } else if (draggedSelectedNodes.size > 0) {
+            // Multi-node dragging - batch update all selected nodes on server
+            console.log(`Multi-node drag ended (mouse left canvas), updating ${draggedSelectedNodes.size} nodes on server`);
+            const particleUpdates = [];
+            for (const [nodeKey, dragInfo] of draggedSelectedNodes) {
+                const node = particles.nodes[nodeKey];
+                if (node) {
+                    particleUpdates.push({ key: nodeKey, particle: node });
+                }
+            }
+            debouncedUpdateMultipleParticles(particleUpdates);
+            draggedSelectedNodes.clear();
+        }
+    }
+
+    // Cancel selection box if mouse leaves canvas
+    if (isSelectionBoxActive) {
+        isSelectionBoxActive = false;
     }
 
     draggingObject = null;
     isDragging = false;
+    isPanning = false;
+});
+
+// Prevent context menu on right-click
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
 });
 
 canvas.addEventListener(
@@ -1305,7 +1500,7 @@ canvas.addEventListener(
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        const zoomFactor = e.deltaY < 0 ? 1.01 : 0.99;
+        const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
         zoomAt(mouseX, mouseY, zoomFactor);
     },
     { passive: false }
@@ -1339,6 +1534,26 @@ function draw(timestamp) {
     ctx.save();
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
     // repelAndAttract(canvas, particles, 10);
-    drawParticles(ctx, particles, showNodeLabels, showEdgeLabels);
+    drawParticles(ctx, particles, showNodeLabels, showEdgeLabels, selectedNodes);
+
+    // Draw selection box if active
+    if (isSelectionBoxActive) {
+        const boxLeft = Math.min(selectionBoxStart.x, selectionBoxEnd.x);
+        const boxRight = Math.max(selectionBoxStart.x, selectionBoxEnd.x);
+        const boxTop = Math.min(selectionBoxStart.y, selectionBoxEnd.y);
+        const boxBottom = Math.max(selectionBoxStart.y, selectionBoxEnd.y);
+
+        // Draw selection box background
+        ctx.fillStyle = 'rgba(255, 107, 53, 0.2)'; // Semi-transparent orange
+        ctx.fillRect(boxLeft, boxTop, boxRight - boxLeft, boxBottom - boxTop);
+
+        // Draw selection box border
+        ctx.strokeStyle = '#ff6b35'; // Orange border matching selection color
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]); // Dashed line
+        ctx.strokeRect(boxLeft, boxTop, boxRight - boxLeft, boxBottom - boxTop);
+        ctx.setLineDash([]); // Reset line dash
+    }
+
     ctx.restore();
 }

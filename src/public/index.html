@@ -17,7 +17,7 @@
 		<button id="openMapBtn">Open Map</button>
 		<button id="toggleNodeLabelsBtn">Node Labels</button>
 		<button id="toggleEdgeLabelsBtn">Edge Labels</button>
-		<a href="/tree"><button id="treeBtn">Tree</button></a>
+		<a href="/chat"><button id="charBtn">Chat</button></a>
 	</div>
 	<canvas id="canvas"></canvas>
 	<script type="module" src="graph.js"></script>
@@ -82,6 +82,14 @@
 
 	<div id="notification" class="notification hidden">
 		<span id="notificationMessage"></span>
+	</div>
+
+	<div class="controls-help">
+		<div class="help-item">Drag: Move nodes</div>
+		<div class="help-item">Shift + click: Select nodes</div>
+		<div class="help-item">Shift + drag: Select multiple</div>
+		<div class="help-item">Right-click + drag: Pan canvas</div>
+		<div class="help-item">Mouse wheel: Zoom</div>
 	</div>
 
 </body>

@@ -1,9 +1,52 @@
 import { GraphData, Node, Edge, EdgeOptions, ApiResponse } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { websocketService } from './websocketService';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export class GraphService {
     private graphData: GraphData = { nodes: {}, edges: {} };
+    private dataFilePath: string;
+
+    constructor() {
+        // Set the path to the data file in the project root
+        this.dataFilePath = path.join(process.cwd(), 'job&data.json');
+        // Note: Not automatically loading data file on startup
+        // Use loadDataFromFile() method if you want to manually load existing data
+    }
+
+    /**
+     * Load data from the job&data.json file
+     */
+    async loadDataFromFile(): Promise<void> {
+        try {
+            const data = await fs.readFile(this.dataFilePath, 'utf-8');
+            const parsedData = JSON.parse(data);
+            
+            // Validate the structure
+            if (parsedData && typeof parsedData === 'object' && 
+                parsedData.nodes && parsedData.edges) {
+                this.graphData = parsedData;
+                console.log(`Loaded ${Object.keys(this.graphData.nodes).length} nodes and ${Object.keys(this.graphData.edges).length} edges from ${this.dataFilePath}`);
+            } else {
+                console.warn('Invalid data structure in data file, using empty graph');
+            }
+        } catch (error) {
+            console.log(`No existing data file found at ${this.dataFilePath}, starting with empty graph`);
+        }
+    }
+
+    /**
+     * Save current data to the job&data.json file
+     */
+    private async saveDataToFile(): Promise<void> {
+        try {
+            await fs.writeFile(this.dataFilePath, JSON.stringify(this.graphData, null, 2));
+            console.log(`Saved graph data to ${this.dataFilePath}`);
+        } catch (error) {
+            console.error('Failed to save data to file:', error);
+        }
+    }
 
     /**
      * Get the complete graph data
@@ -18,6 +61,9 @@ export class GraphService {
     updateGraph(data: GraphData): ApiResponse {
         try {
             this.graphData = data;
+
+            // Save to file
+            this.saveDataToFile();
 
             // Notify WebSocket clients of bulk update
             websocketService.notifyDataChange('bulk_update', this.graphData);
@@ -39,6 +85,9 @@ export class GraphService {
         try {
             const isUpdate = this.graphData.nodes[key] !== undefined;
             this.graphData.nodes[key] = node;
+
+            // Save to file
+            this.saveDataToFile();
 
             // Notify WebSocket clients of node change
             websocketService.notifyDataChange(
@@ -91,6 +140,9 @@ export class GraphService {
                 delete this.graphData.edges[edgeId];
             });
 
+            // Save to file
+            this.saveDataToFile();
+
             // Notify WebSocket clients of node deletion
             websocketService.notifyDataChange('delete', this.graphData, key);
 
@@ -121,6 +173,10 @@ export class GraphService {
         };
 
         this.graphData.edges[edgeId] = edge;
+
+        // Save to file
+        this.saveDataToFile();
+
         return edgeId;
     }
 
@@ -130,6 +186,10 @@ export class GraphService {
     removeEdge(edgeId: string): boolean {
         if (this.graphData.edges[edgeId]) {
             delete this.graphData.edges[edgeId];
+            
+            // Save to file
+            this.saveDataToFile();
+            
             return true;
         }
         return false;
@@ -170,6 +230,11 @@ export class GraphService {
             delete this.graphData.edges[edgeId];
         });
 
+        if (edgesToRemove.length > 0) {
+            // Save to file
+            this.saveDataToFile();
+        }
+
         return edgesToRemove.length;
     }
 
@@ -189,6 +254,9 @@ export class GraphService {
     clearAll(): ApiResponse {
         try {
             this.graphData = { nodes: {}, edges: {} };
+
+            // Save to file
+            this.saveDataToFile();
 
             // Notify WebSocket clients of data clear
             websocketService.notifyDataChange('clear', this.graphData);

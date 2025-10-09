@@ -48,18 +48,35 @@ export const addParticle = (req: Request, res: Response) => {
     const { key } = req.params;
     const requestBody = req.body;
     
+    console.log('addParticle handler called with key:', key);
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    
+    // Validate required fields
+    if (!requestBody.title || requestBody.x === undefined || requestBody.y === undefined || requestBody.radius === undefined) {
+      console.error('Missing required fields:', { title: requestBody.title, x: requestBody.x, y: requestBody.y, radius: requestBody.radius });
+      res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields: title, x, y, radius' 
+      });
+      return;
+    }
+    
     // Extract node data
     const node: Node = {
-      x: requestBody.x,
-      y: requestBody.y,
-      color: requestBody.color,
-      title: requestBody.title,
-      radius: requestBody.radius,
+      x: parseFloat(requestBody.x) || 0,
+      y: parseFloat(requestBody.y) || 0,
+      color: requestBody.color || 'blue',
+      title: requestBody.title || 'Untitled',
+      radius: parseFloat(requestBody.radius) || 20,
       data: requestBody.data
     };
     
+    console.log('Created node object:', JSON.stringify(node, null, 2));
+    
     // Add the node
     const result = graphService.addNode(key, node);
+    
+    console.log('GraphService result:', JSON.stringify(result, null, 2));
     
     if (result.success) {
       res.json(result);
@@ -68,9 +85,10 @@ export const addParticle = (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error('Error in addParticle handler:', error);
-    res.status(400).json({ 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
       success: false, 
-      message: 'Invalid node data' 
+      message: 'Internal server error: ' + errorMessage 
     });
   }
 };
